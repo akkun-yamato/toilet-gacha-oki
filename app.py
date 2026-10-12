@@ -106,7 +106,6 @@ if st.session_state.show_slot and st.session_state.results:
     if not all_men: all_men = ["---"]
     if not all_women: all_women = ["---"]
 
-    # 当選者が必ずリストに含まれるようにする（安全策）
     men_reel_list = list(all_men)
     guest_reel_list = list(all_men)
     women_reel_list = list(all_women)
@@ -124,7 +123,7 @@ if st.session_state.show_slot and st.session_state.results:
     guest_win_js = json.dumps(guest_winner, ensure_ascii=False)
     women_win_js = json.dumps(women_winner, ensure_ascii=False)
 
-    img_normal = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main/yamato_god2_normal.png"
+    img_normal = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main/yamato-god2-normal.png"
     img_peka = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main/yamato-god2-peka.png"
 
     slot_html = f"""
@@ -145,7 +144,6 @@ body {{
     height: 600px;
     margin: 10px auto;
 }}
-/* normal画像は常に表示 */
 .cabinet-bg {{
     position: absolute;
     top: 0; left: 0;
@@ -156,7 +154,6 @@ body {{
     background-repeat: no-repeat;
     z-index: 1;
 }}
-/* peka画像は確定時だけ上から被せる */
 .cabinet-peka {{
     position: absolute;
     top: 0; left: 0;
@@ -181,7 +178,6 @@ body {{
     0% {{ filter: hue-rotate(0deg) brightness(1.3) saturate(1.5); }}
     100% {{ filter: hue-rotate(360deg) brightness(1.3) saturate(1.5); }}
 }}
-/* リール窓 */
 .reels {{
     position: absolute;
     top: 232px;
@@ -222,10 +218,7 @@ body {{
 .reel-item.winner {{
     color: #c71585;
     background: linear-gradient(90deg, #ffd700 0%, #fff 50%, #ffd700 100%);
-    text-shadow: 
-        1px 1px 0 #fff,
-        -1px -1px 0 #fff,
-        0 0 8px #ffd700;
+    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 0 0 8px #ffd700;
     font-weight: 900;
     animation: winnerGlow 0.5s infinite alternate;
 }}
@@ -242,7 +235,7 @@ body {{
 }}
 .center-line {{
     position: absolute;
-    top: 36px;
+    top: 268px;
     left: 148px;
     width: 212px;
     height: 36px;
@@ -251,38 +244,18 @@ body {{
     pointer-events: none;
     z-index: 6;
 }}
-.score-overlay {{
-    position: absolute;
-    top: 358px;
-    left: 148px;
-    width: 212px;
-    height: 32px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 5;
-}}
-.score-num {{
-    color: #ff2222;
-    font-family: 'Courier New', monospace;
-    font-size: 16px;
-    font-weight: 900;
-    text-shadow: 0 0 6px #ff0000;
-    width: 42px;
-    text-align: center;
-}}
 .jackpot {{
     position: absolute;
     bottom: -40px;
     left: 0; right: 0;
     text-align: center;
     font-size: 28px;
-    color: #ffd700;
     font-weight: 900;
     text-shadow: 2px 2px 0 #c71585, 4px 4px 15px #ff1493;
     opacity: 0;
     letter-spacing: 3px;
     z-index: 10;
+    color: #ffd700;
 }}
 .jackpot.show {{
     opacity: 1;
@@ -313,14 +286,7 @@ body {{
         height: 72px;
     }}
     .reel-item {{ height: 24px; font-size: 11px; }}
-    .center-line {{ top: 24px; left: 99px; width: 141px; height: 24px; }}
-    .score-overlay {{
-        top: 239px;
-        left: 99px;
-        width: 141px;
-        height: 22px;
-    }}
-    .score-num {{ font-size: 11px; width: 28px; }}
+    .center-line {{ top: 179px; left: 99px; width: 141px; height: 24px; }}
     .jackpot {{ font-size: 20px; }}
 }}
 </style>
@@ -335,11 +301,6 @@ body {{
         <div class="reel"><div class="reel-inner" id="reel3"></div><div class="reel-glass"></div></div>
     </div>
     <div class="center-line"></div>
-    <div class="score-overlay">
-        <div class="score-num" id="s1">00</div>
-        <div class="score-num" id="s2">00</div>
-        <div class="score-num" id="s3">00</div>
-    </div>
     <div class="jackpot" id="jackpot">✨ 当選確定！ ✨</div>
 </div>
 <script>
@@ -353,18 +314,15 @@ const womenWin = {women_win_js};
 const isMobile = window.innerWidth <= 600;
 const itemHeight = isMobile ? 24 : 36;
 
-// リール構築：ランダム順に大量に並べて、最後に「ダミー・当選者・ダミー」を配置
 function buildReel(list, winner) {{
     const loops = 30;
     let html = '';
     for (let i = 0; i < loops; i++) {{
-        // 毎ループ名前リストをシャッフルして変化を出す
         const shuffled = [...list].sort(() => Math.random() - 0.5);
         for (let name of shuffled) {{
             html += `<div class="reel-item">${{name}}</div>`;
         }}
     }}
-    // 最後の3つ：ダミー・当選者・ダミー
     const dummy1 = list.find(n => n !== winner) || list[0];
     const dummy2 = list.find(n => n !== winner && n !== dummy1) || list[0];
     html += `<div class="reel-item">${{dummy1}}</div>`;
@@ -381,13 +339,9 @@ reel1.innerHTML = buildReel(menList, menWin);
 reel2.innerHTML = buildReel(guestList, guestWin);
 reel3.innerHTML = buildReel(womenList, womenWin);
 
-// 当選者（winner要素）が中央窓にピタッと止まるように計算
-// 中央窓は上から itemHeight 分（1個目の下）
 function getStopPos(reel) {{
     const winnerItem = reel.querySelector('.reel-item.winner');
     const idx = Array.from(reel.querySelectorAll('.reel-item')).indexOf(winnerItem);
-    // reel-innerのtopを -(idx * itemHeight - itemHeight) にすると、
-    // 当選者が中央（上から1個目の位置）に来る
     return -(idx * itemHeight - itemHeight);
 }}
 
@@ -406,19 +360,7 @@ setTimeout(() => {{
     reel3.style.top = getStopPos(reel3) + 'px';
 }}, 500);
 
-const s1 = document.getElementById('s1'), s2 = document.getElementById('s2'), s3 = document.getElementById('s3');
-const scoreTimer = setInterval(() => {{
-    s1.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
-    s2.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
-    s3.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
-}}, 80);
-
 setTimeout(() => {{
-    clearInterval(scoreTimer);
-    s1.textContent = '77';
-    s2.textContent = '77';
-    s3.textContent = '77';
-    // peka画像を被せる＋ジャックポット表示
     document.getElementById('peka').classList.add('show');
     document.getElementById('jackpot').classList.add('show');
 }}, 500 + d3 + 300);
