@@ -11,23 +11,9 @@ st.set_page_config(page_title="YAMATO 神々の情熱 トイレ掃除ガチャ",
 init_db()
 
 BASE_URL = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main"
-NORMAL_IMG = f"{BASE_URL}/yamato-god2-normal.png"
-PEKA_IMG = f"{BASE_URL}/yamato-god2-peka.png"
-
-# メンバーごとの色（参考画像のテイスト）
-NAME_COLORS = {
-    "あっくん": "#4ecdc4", "かんぬし": "#45b7d1", "しゃっちょ": "#ff6b6b",
-    "はっしー": "#feca57", "しゅんちゃん": "#ff9ff3", "けんちゃん": "#5f27cd",
-    "こうちゃん大": "#00d2d3", "こうちゃん小": "#a0e157", "しんや": "#ff6348",
-    "まさゆき": "#1dd1a1", "なおきち": "#ffa502", "まーくん": "#eccc68",
-    "やまぴー": "#ff7f50", "りょうちん": "#7bed9f", "けんたくん": "#70a1ff",
-    "いっちー": "#f368e0", "かずえちゃん": "#ff6b9d", "しげちゃん": "#48dbfb",
-    "ねえさん": "#ee5a6f", "のぶこちゃん": "#c56cf0", "とももん": "#ff9f43",
-    "のりぴー": "#feca57", "ちーかわ": "#ff6b9d",
-}
-
-def get_color(name):
-    return NAME_COLORS.get(name, "#333333")
+NORMAL_IMG = f"{BASE_URL}/yamato-god2-normal-2x.png"
+PEKA_IMG = f"{BASE_URL}/yamato-god2-peka-2x.png"
+FONT_URL = f"{BASE_URL}/MPLUSRounded1c-Black.ttf"
 
 st.markdown("""
 <style>
@@ -92,138 +78,229 @@ if st.session_state.show_gacha and st.session_state.results:
     all_men = get_members("M")
     all_women = get_members("F")
 
-    def build_reel_items(pool, winner):
-        items = []
-        for _ in range(20):
-            items.extend(random.sample(pool, len(pool)))
-        if winner in pool:
-            others = [n for n in pool if n != winner]
-            above = random.choice(others) if others else winner
-            below = random.choice(others) if others else winner
-            items = [above, winner, below] + items
-        else:
-            items = [pool[0], pool[0], pool[0]] + items
-        return items
-
-    men_items = build_reel_items(all_men, men_winner)
-    guest_items = build_reel_items(all_men, guest_winner)
-    women_items = build_reel_items(all_women, women_winner)
-
-    def to_list(names):
-        return [{"name": n, "color": get_color(n)} for n in names]
-
-    men_js = json.dumps(to_list(men_items), ensure_ascii=False)
-    guest_js = json.dumps(to_list(guest_items), ensure_ascii=False)
-    women_js = json.dumps(to_list(women_items), ensure_ascii=False)
+    reel_men_names = all_men
+    reel_guest_names = all_men
+    reel_women_names = all_women
+    
+    men_js = json.dumps(reel_men_names, ensure_ascii=False)
+    guest_js = json.dumps(reel_guest_names, ensure_ascii=False)
+    women_js = json.dumps(reel_women_names, ensure_ascii=False)
 
     gacha_html = f"""
-    <div class="cabinet-wrap" style="position:relative; width:400px; height:680px; margin:0 auto;">
-        <img id="cabinet" src="{NORMAL_IMG}" style="position:absolute; top:0; left:0; width:400px; height:600px; z-index:1;"/>
-        
-        <div class="reel-container" style="position:absolute; top:215px; left:108px; width:185px; height:90px; z-index:3; display:flex; gap:2px; justify-content:center;">
-            <div class="reel-window" id="rw-men">
-                <div class="reel-inner" id="ri-men"></div>
-            </div>
-            <div class="reel-window" id="rw-guest">
-                <div class="reel-inner" id="ri-guest"></div>
-            </div>
-            <div class="reel-window" id="rw-women">
-                <div class="reel-inner" id="ri-women"></div>
-            </div>
-        </div>
-        
-        <div id="jackpot" style="position:absolute; top:625px; left:0; right:0; text-align:center; font-size:26px; font-weight:bold; z-index:5; opacity:0; animation:rainbow 1s linear infinite;">
-            🎉 当選確定！ 🎉
-        </div>
-    </div>
-    
-    <style>
-    .reel-window {{
-        width:60px; height:90px; overflow:hidden; position:relative;
-        background: linear-gradient(180deg, #fafafa 0%, #ffffff 50%, #fafafa 100%);
-        border-radius:3px;
+<style>
+@font-face{{
+    font-family:"MR";
+    src:url("{FONT_URL}") format("truetype");
+    font-weight:900;
+    font-display:block;
+}}
+html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;}}
+#fit{{position:relative;width:100%;height:720px;display:flex;align-items:center;justify-content:center;}}
+#stage{{position:relative;width:480px;height:600px;transform-origin:center center;flex:none;}}
+.cab{{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;user-select:none;}}
+.cab.peka{{opacity:0;transition:opacity .08s;}}
+#stage.win .cab.peka{{animation:peka 0.5s steps(1) infinite;}}
+@keyframes peka{{0%{{opacity:1}}50%{{opacity:0}}}}
+#stage.win.hold .cab.peka{{animation:none;opacity:1;}}
+
+.reel{{position:absolute;z-index:2;overflow:hidden;background:#efe6cf;border-radius:3px;}}
+.strip{{position:absolute;left:0;right:0;top:0;will-change:transform;}}
+.cell{{position:relative;box-sizing:border-box;display:block;overflow:hidden;}}
+.cell canvas{{display:block;width:100%;height:100%;}}
+.backlight{{position:absolute;inset:0;z-index:1;pointer-events:none;mix-blend-mode:screen;
+    background:radial-gradient(ellipse 70% 55% at 50% 50%,rgba(255,250,230,.55),rgba(255,240,200,0) 70%);}}
+.shade{{position:absolute;inset:0;z-index:3;pointer-events:none;
+    background:
+      linear-gradient(180deg,rgba(20,5,0,.70) 0%,rgba(20,5,0,.30) 10%,rgba(20,5,0,.06) 24%,rgba(0,0,0,0) 34%,rgba(0,0,0,0) 66%,rgba(20,5,0,.06) 76%,rgba(20,5,0,.30) 90%,rgba(20,5,0,.70) 100%),
+      linear-gradient(90deg,rgba(0,0,0,.22) 0%,rgba(0,0,0,0) 14%,rgba(0,0,0,0) 86%,rgba(0,0,0,.22) 100%);}}
+.glass{{position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.28) 38%,rgba(255,255,255,0) 46%,rgba(255,255,255,0) 70%,rgba(255,255,255,.12) 74%,rgba(255,255,255,0) 78%);
+    box-shadow:inset 0 0 10px rgba(0,0,0,.55);}}
+.blur .strip{{filter:blur(1.4px) brightness(1.02);}}
+.line{{position:absolute;left:0;right:0;z-index:3;pointer-events:none;opacity:0;
+    box-shadow:inset 0 0 0 2px #ff1493,inset 0 0 12px rgba(255,20,147,.85);transition:opacity .2s;}}
+#stage.win .line{{opacity:1;animation:lineflash .5s ease-in-out infinite alternate;}}
+@keyframes lineflash{{from{{box-shadow:inset 0 0 0 2px #ff1493,inset 0 0 10px rgba(255,20,147,.6)}}to{{box-shadow:inset 0 0 0 2px #fff,inset 0 0 18px rgba(255,20,147,1)}}}}
+
+#jackpot{{position:absolute;top:88%;left:0;right:0;text-align:center;font-size:22px;font-weight:900;z-index:7;opacity:0;color:#fff;
+    animation:rainbow 1s linear infinite;}}
+#stage.win #jackpot{{opacity:1;}}
+@keyframes rainbow{{
+    0%{{color:#ff0000;text-shadow:0 0 12px #ff0000}}
+    33%{{color:#ffd700;text-shadow:0 0 12px #ffd700}}
+    66%{{color:#00bfff;text-shadow:0 0 12px #00bfff}}
+    100%{{color:#ff1493;text-shadow:0 0 12px #ff1493}}
+}}
+</style>
+
+<div id="fit">
+  <div id="stage">
+    <div class="reel" id="r0"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+    <div class="reel" id="r1"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+    <div class="reel" id="r2"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+    <img class="cab normal" src="{NORMAL_IMG}" alt="">
+    <img class="cab peka" src="{PEKA_IMG}" alt="">
+    <div id="jackpot">🎉 当選確定！ 🎉</div>
+  </div>
+</div>
+
+<script>
+// 筐体画像(960x1200)での窓位置 → ステージ(480x600)用に0.5倍
+const HOLES = [
+    {{ x:315*0.5, y:443*0.5, w:117*0.5, h:201*0.5 }},
+    {{ x:452*0.5, y:443*0.5, w:118*0.5, h:201*0.5 }},
+    {{ x:591*0.5, y:443*0.5, w:118*0.5, h:201*0.5 }},
+];
+const BLEED = 3;
+const ROWS = 3;
+
+const REEL_NAMES = [{men_js}, {guest_js}, {women_js}];
+const WINNERS = ["{men_winner}", "{guest_winner}", "{women_winner}"];
+
+function shuffle(a){{for(let i=a.length-1;i>0;i--){{const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}}return a;}}
+
+function makeCell(name, w, h){{
+    const S=2, W=Math.round(w*S), H=Math.round(h*S);
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const x=cv.getContext('2d');
+    // クリーム背景
+    const bg=x.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#f3ead3'); bg.addColorStop(.5,'#fbf6e8'); bg.addColorStop(1,'#f0e6cc');
+    x.fillStyle=bg; x.fillRect(0,0,W,H);
+    // 粒子
+    for(let i=0;i<W*H/900;i++){{
+        x.fillStyle='rgba(120,90,40,'+(Math.random()*.05)+')';
+        x.fillRect(Math.random()*W,Math.random()*H,S,S);
     }}
-    .reel-window.win {{
-        box-shadow: 0 0 20px #ff1493, inset 0 0 10px rgba(255,20,147,0.3);
-        animation: winFlash 0.5s linear infinite;
+    x.fillStyle='rgba(180,130,40,.35)';
+    x.fillRect(0,0,W,1.2*S); x.fillRect(0,H-1.2*S,W,1.2*S);
+    // 影楕円
+    x.save(); x.translate(W/2,H/2); x.scale(1,.62);
+    const pg=x.createRadialGradient(0,0,4*S,0,0,W*.48);
+    pg.addColorStop(0,'rgba(30,0,25,.18)'); pg.addColorStop(1,'rgba(30,0,25,0)');
+    x.fillStyle=pg; x.beginPath(); x.arc(0,0,W*.48,0,7); x.fill(); x.restore();
+    // 行分割
+    let lines=[name]; const len=[...name].length;
+    if(len>=5 && name.endsWith('ちゃん')) lines=[name.slice(0,-3),'ちゃん'];
+    else if(len>=6) lines=[name.slice(0,Math.ceil(len/2)),name.slice(Math.ceil(len/2))];
+    const padX=5*S, padY=4*S, maxW=W-padX*2, maxH=H-padY*2;
+    let fs = maxH/lines.length/1.05;
+    x.font='900 '+fs+'px MR,sans-serif';
+    const mw=Math.max(...lines.map(l=>x.measureText(l).width));
+    const ow=fs*0.28; if(mw+ow>maxW) fs*=maxW/(mw+ow);
+    x.font='900 '+fs+'px MR,sans-serif';
+    x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round';
+    const lh=fs*1.0, y0=H/2-(lines.length-1)*lh/2+fs*.05;
+    const ys=lines.map((_,i)=>y0+i*lh);
+    const each=f=>lines.forEach((l,i)=>f(l,W/2,ys[i]));
+    // 白縁
+    x.lineWidth=fs*.30; x.strokeStyle='#fff';
+    x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=3*S; x.shadowOffsetY=1*S;
+    each((l,a,b)=>x.strokeText(l,a,b));
+    x.shadowColor='transparent';
+    // 立体影
+    for(let d=4;d>=1;d--){{
+        x.lineWidth=fs*.17; x.strokeStyle='#000';
+        each((l,a,b)=>x.strokeText(l,a+d*.35*S,b+d*.55*S));
+        x.fillStyle='rgb('+(110+d*8)+','+(55+d*4)+',0)';
+        each((l,a,b)=>x.fillText(l,a+d*.35*S,b+d*.55*S));
     }}
-    @keyframes winFlash {{
-        0%, 100% {{ box-shadow: 0 0 20px #ff1493, inset 0 0 10px rgba(255,20,147,0.3); }}
-        50% {{ box-shadow: 0 0 35px #ffd700, inset 0 0 15px rgba(255,215,0,0.5); }}
-    }}
-    .reel-inner {{
-        position:absolute; top:0; left:0; width:100%;
-    }}
-    .reel-item {{
-        width:60px; height:30px; display:flex; align-items:center; justify-content:center;
-        box-sizing:border-box; padding:2px;
-    }}
-    .reel-item .name-tag {{
-        display:inline-block; padding:3px 5px; border-radius:10px;
-        background:#fff; font-weight:bold; font-size:10px;
-        text-align:center; line-height:1.1; white-space:nowrap;
-        text-shadow: 0 0 2px #fff, 1px 1px 1px rgba(0,0,0,0.1);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        max-width:54px; overflow:hidden; text-overflow:ellipsis;
-        border: 1px solid rgba(0,0,0,0.1);
-    }}
-    @keyframes rainbow {{
-        0% {{ color:#ff0000; text-shadow: 0 0 15px #ff0000; }}
-        16% {{ color:#ff8c00; text-shadow: 0 0 15px #ff8c00; }}
-        33% {{ color:#ffd700; text-shadow: 0 0 15px #ffd700; }}
-        50% {{ color:#00ff00; text-shadow: 0 0 15px #00ff00; }}
-        66% {{ color:#00bfff; text-shadow: 0 0 15px #00bfff; }}
-        83% {{ color:#8a2be2; text-shadow: 0 0 15px #8a2be2; }}
-        100% {{ color:#ff1493; text-shadow: 0 0 15px #ff1493; }}
-    }}
-    </style>
-    
-    <script>
-    const menList = {men_js};
-    const guestList = {guest_js};
-    const womenList = {women_js};
-    const ITEM_H = 30;
-    
-    function buildReel(elId, list) {{
-        const el = document.getElementById(elId);
-        el.innerHTML = list.map(it => {{
-            return `<div class="reel-item"><span class="name-tag" style="color:${{it.color}};">${{it.name}}</span></div>`;
-        }}).join('');
-    }}
-    
-    function spin(innerId, windowId, list, delay) {{
-        const inner = document.getElementById(innerId);
-        const win = document.getElementById(windowId);
-        const stopPos = 0;
-        const startPos = -(list.length - 10) * ITEM_H;
-        inner.style.transition = 'none';
-        inner.style.top = startPos + 'px';
-        setTimeout(() => {{
-            inner.style.transition = 'top 1.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-            inner.style.top = stopPos + 'px';
-            setTimeout(() => {{
-                win.classList.add('win');
-            }}, 1500);
-        }}, delay + 50);
-    }}
-    
-    buildReel('ri-men', menList);
-    buildReel('ri-guest', guestList);
-    buildReel('ri-women', womenList);
-    
+    x.lineWidth=fs*.17; x.strokeStyle='#111';
+    each((l,a,b)=>x.strokeText(l,a,b));
+    // 金グラデ
+    lines.forEach((l,i)=>{{
+        const y=ys[i], g=x.createLinearGradient(0,y-fs/2,0,y+fs/2);
+        g.addColorStop(0,'#fffbe0'); g.addColorStop(.22,'#ffe866');
+        g.addColorStop(.45,'#ffd700'); g.addColorStop(.56,'#ff8c00');
+        g.addColorStop(.78,'#ffc21a'); g.addColorStop(1,'#fff0a0');
+        x.fillStyle=g; x.fillText(l,W/2,y);
+    }});
+    return cv;
+}}
+
+let reels=[];
+function render(r){{
+    const p = ((r.pos % r.N)+r.N)%r.N;
+    const y = -(p + r.N) * r.cellH + r.offsetTop;
+    r.strip.style.transform = `translateY(${{y}}px)`;
+}}
+
+const stage = document.getElementById('stage');
+
+document.fonts.ready.then(() => document.fonts.load('900 40px MR')).then(build);
+function build(){{
+    reels = HOLES.map((h,i)=>{{
+        const el=document.getElementById('r'+i);
+        const W=h.w+BLEED*2, H=h.h+BLEED*2;
+        Object.assign(el.style,{{left:h.x-BLEED+'px',top:h.y-BLEED+'px',width:W+'px',height:H+'px'}});
+        const cellH = h.h/ROWS;
+        const names = REEL_NAMES[i];
+        const N = names.length;
+        const order = shuffle([...Array(N).keys()]);
+        const strip = el.querySelector('.strip');
+        for(let k=0;k<3;k++) order.forEach(n=>{{
+            const c=document.createElement('div'); c.className='cell'; c.style.height=cellH+'px';
+            c.appendChild(makeCell(names[n], W, cellH));
+            strip.appendChild(c);
+        }});
+        const line = el.querySelector('.line');
+        Object.assign(line.style,{{top:BLEED+cellH+'px',height:cellH+'px'}});
+        return {{ el, strip, order, names, N, cellH, offsetTop:BLEED, pos:Math.random()*N, speed:0, state:'spin' }};
+    }});
+    reels.forEach(render);
+    // 自動開始
     setTimeout(() => {{
-        spin('ri-men', 'rw-men', menList, 0);
-        spin('ri-guest', 'rw-guest', guestList, 300);
-        spin('ri-women', 'rw-women', womenList, 600);
-        
-        setTimeout(() => {{
-            document.getElementById('cabinet').src = '{PEKA_IMG}';
-            document.getElementById('jackpot').style.opacity = '1';
-        }}, 2800);
-    }}, 500);
-    </script>
+        reels.forEach(r=>{{r.state='spin';r.speed=0;r.el.classList.add('blur');}});
+        requestAnimationFrame(loop);
+        // 順次停止
+        setTimeout(() => autoStop(0), 1500);
+        setTimeout(() => autoStop(1), 2200);
+        setTimeout(() => autoStop(2), 2900);
+    }}, 300);
+}}
+
+function autoStop(i){{
+    const r=reels[i]; if(r.state!=='spin') return;
+    const winnerName = WINNERS[i];
+    const winnerIdx = r.names.indexOf(winnerName);
+    if(winnerIdx<0){{ r.state='stop'; r.el.classList.remove('blur'); checkEnd(); return; }}
+    const k = r.order.indexOf(winnerIdx);
+    let top = k-1;
+    let base = Math.floor(r.pos);
+    let t = base + ((top - base) % r.N + r.N) % r.N;
+    if(t - r.pos < 3) t += r.N;
+    r.target=t; r.state='braking'; r.from=r.pos;
+    r.t0=performance.now(); r.dur = 380 + (t-r.pos)*6;
+}}
+
+function loop(now){{
+    let active=false;
+    for(const r of reels){{
+        if(r.state==='spin'){{ r.speed=Math.min(r.speed+0.02,0.42); r.pos+=r.speed; active=true; }}
+        else if(r.state==='braking'){{
+            const u=Math.min(1,(now-r.t0)/r.dur), e=1-Math.pow(1-u,3);
+            r.pos = r.from + (r.target-r.from)*e;
+            if(u>=1){{ r.pos=r.target; r.state='stop'; r.el.classList.remove('blur'); bounce(r); checkEnd(); }}
+            else active=true;
+        }}
+        render(r);
+    }}
+    if(active) requestAnimationFrame(loop);
+}}
+
+function bounce(r){{
+    r.strip.animate([{{marginTop:'3px'}},{{marginTop:'-1px'}},{{marginTop:'0px'}}],{{duration:160,easing:'ease-out'}});
+}}
+
+function checkEnd(){{
+    if(reels.every(r=>r.state==='stop')){{
+        stage.classList.add('win');
+        setTimeout(()=>stage.classList.add('hold'),1600);
+    }}
+}}
+</script>
     """
-    components.html(gacha_html, height=720)
+    components.html(gacha_html, height=740)
 
     st.markdown("### 🏆 本日の当選者")
     c1, c2, c3 = st.columns(3)
