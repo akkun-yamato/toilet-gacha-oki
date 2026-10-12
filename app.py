@@ -7,7 +7,7 @@ import random
 from database import init_db, get_members, save_result, get_history, reset_round, clear_history
 from gacha import draw_all
 
-st.set_page_config(page_title="YAMATO 神々の情熱 トイレ掃除ガチャ", page_icon="🎰", layout="wide")
+st.set_page_config(page_title="YAMATO トイレ抽選", page_icon="🎰", layout="wide")
 init_db()
 
 BASE_URL = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main"
@@ -18,7 +18,7 @@ FONT_URL = f"{BASE_URL}/MPLUSRounded1c-Black.ttf"
 st.markdown("""
 <style>
 .stApp { background: linear-gradient(135deg, #ffe4f1, #fff0f5, #e6e0ff, #fff8e7); }
-h1 { color: #d6336c; text-align: center; font-size: 28px; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 0 0 10px rgba(214,51,108,0.3); }
+h1 { color: #d6336c; text-align: center; font-size: 32px; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 0 0 10px rgba(214,51,108,0.3); margin-bottom: 8px; }
 .date-display { text-align: center; color: #333; font-size: 16px; margin-bottom: 15px; font-weight: bold; }
 .stButton > button {
     background: linear-gradient(135deg, #ff6b9d, #d6336c);
@@ -29,13 +29,13 @@ h1 { color: #d6336c; text-align: center; font-size: 28px; text-shadow: 2px 2px 0
 .stCheckbox label { font-size: 16px !important; font-weight: bold !important; color: #333 !important; }
 div[data-testid="stExpander"] summary { color: #333 !important; font-weight: bold !important; }
 @media (max-width: 600px) {
-    h1 { font-size: 20px; }
+    h1 { font-size: 22px; }
     .date-display { font-size: 14px; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1>🎰 YAMATO 神々の情熱 トイレ掃除ガチャ 🎰</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🎰 YAMATO トイレ抽選 🎰</h1>", unsafe_allow_html=True)
 st.markdown(f"<div class='date-display'>📅 {date.today().strftime('%Y年%m月%d日')}</div>", unsafe_allow_html=True)
 
 if "absent" not in st.session_state: st.session_state.absent = []
@@ -85,9 +85,9 @@ if st.session_state.show_gacha and st.session_state.results:
     font-weight:900;
     font-display:block;
 }}
-html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;}}
-#fit{{position:relative;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:10px;}}
-#stage-wrap{{position:relative;width:100%;max-width:480px;overflow:visible;}}
+html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;text-align:center;}}
+#fit{{position:relative;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:10px;box-sizing:border-box;}}
+#stage-wrap{{position:relative;width:100%;max-width:480px;margin:0 auto;overflow:visible;display:flex;justify-content:center;}}
 #stage{{position:relative;width:480px;height:680px;flex:none;transform-origin:top center;}}
 .cab{{position:absolute;top:0;left:0;width:480px;height:600px;z-index:5;pointer-events:none;user-select:none;}}
 .cab.peka{{opacity:0;transition:opacity .08s;}}
@@ -132,7 +132,7 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
 #hint{{position:absolute;top:605px;left:0;right:0;text-align:center;font-size:13px;color:#d6336c;font-weight:bold;z-index:6;}}
 #stage.win #hint{{display:none;}}
 
-#winners{{width:95%;max-width:900px;margin-top:30px;opacity:0;transition:opacity 1s;}}
+#winners{{width:95%;max-width:900px;margin:30px auto 0 auto;opacity:0;transition:opacity 1s;text-align:left;}}
 #winners.show{{opacity:1;}}
 .winners-title{{color:#d6336c;font-size:22px;font-weight:bold;text-align:left;margin-bottom:10px;}}
 .winners-row{{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;}}
@@ -143,7 +143,7 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
 .winner-card .wname{{color:#d6336c;font-size:28px;font-weight:bold;margin-top:10px;text-shadow:1px 1px 3px rgba(0,0,0,0.2);}}
 
 @media (max-width: 600px) {{
-    .winners-title{{font-size:18px;}}
+    .winners-title{{font-size:18px;text-align:center;}}
     .winner-card{{min-width:100%;}}
 }}
 </style>
@@ -256,7 +256,7 @@ for (const [id,h] of Object.entries(HOT_POS)){{
     Object.assign(el.style,{{left:(h.x-h.r)+'px',top:(h.y-h.r)+'px',width:(h.r*2)+'px',height:(h.r*2)+'px'}});
 }}
 
-// スマホ対応: 画面幅に合わせて拡縮
+// スマホ対応: 画面幅に合わせて拡縮＋センター配置
 function fitStage(){{
     const parentWidth = stageWrap.offsetWidth;
     const scale = Math.min(1, parentWidth / 480);
@@ -265,6 +265,7 @@ function fitStage(){{
 }}
 window.addEventListener('resize', fitStage);
 setTimeout(fitStage, 50);
+setTimeout(fitStage, 300);
 
 function render(r){{
     const p = ((r.pos % r.N)+r.N)%r.N;
@@ -318,12 +319,16 @@ function stop(i){{
         checkEnd(); return;
     }}
     const k = r.order.indexOf(winnerIdx);
+    // 上→下に流れるため pos は負方向に進む。
+    // top段(k-1)が中段(k)の1つ上に来る位置で停止
     let topRow = k-1;
     let base = Math.floor(r.pos);
-    let t = base + ((topRow - base) % r.N + r.N) % r.N;
-    if (t - r.pos < 3) t += r.N;
+    // 目標位置：posより小さい値（過去側）に設定
+    let t = base - ((base - topRow) % r.N + r.N) % r.N;
+    // 最低3コマは追加で回る
+    if (r.pos - t < 3) t -= r.N;
     r.target=t; r.state='braking'; r.from=r.pos;
-    r.t0=performance.now(); r.dur = 400 + (t-r.pos)*8;
+    r.t0=performance.now(); r.dur = 400 + (r.pos - t)*8;
     document.getElementById('b'+i).classList.remove('ready');
 }}
 
@@ -332,7 +337,7 @@ function loop(now){{
     for(const r of reels){{
         if(r.state==='spin'){{
             r.speed=Math.min(r.speed+0.02,0.42);
-            r.pos += r.speed;
+            r.pos -= r.speed; // 上→下へ流れる
             active=true;
         }}
         else if(r.state==='braking'){{
@@ -350,7 +355,7 @@ function loop(now){{
 }}
 
 function bounce(r){{
-    r.strip.animate([{{marginTop:'3px'}},{{marginTop:'-1px'}},{{marginTop:'0px'}}],{{duration:160,easing:'ease-out'}});
+    r.strip.animate([{{marginTop:'-3px'}},{{marginTop:'1px'}},{{marginTop:'0px'}}],{{duration:160,easing:'ease-out'}});
 }}
 
 function checkEnd(){{
@@ -363,7 +368,6 @@ function checkEnd(){{
     }}
 }}
 
-// タッチイベントとクリックイベント両対応
 function bindButton(el, fn){{
     el.addEventListener('click', fn);
     el.addEventListener('touchend', (e)=>{{ e.preventDefault(); fn(); }});
