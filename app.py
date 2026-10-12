@@ -120,7 +120,7 @@ if st.session_state.show_gacha and st.session_state.results:
     <div class="cabinet-wrap" style="position:relative; width:400px; height:680px; margin:0 auto;">
         <img id="cabinet" src="{NORMAL_IMG}" style="position:absolute; top:0; left:0; width:400px; height:600px; z-index:1;"/>
         
-        <div class="reel-container" style="position:absolute; top:220px; left:78px; width:244px; height:105px; z-index:3; display:flex; gap:2px; justify-content:center;">
+        <div class="reel-container" style="position:absolute; top:260px; left:100px; width:200px; height:90px; z-index:3; display:flex; gap:2px; justify-content:center;">
             <div class="reel-window" id="rw-men">
                 <div class="reel-inner" id="ri-men"></div>
             </div>
@@ -139,7 +139,7 @@ if st.session_state.show_gacha and st.session_state.results:
     
     <style>
     .reel-window {{
-        width:80px; height:105px; overflow:hidden; position:relative;
+        width:64px; height:90px; overflow:hidden; position:relative;
         background:#fff; border:2px solid #ffd700; border-radius:4px;
         box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
     }}
@@ -156,14 +156,14 @@ if st.session_state.show_gacha and st.session_state.results:
         position:absolute; top:0; left:0; width:100%;
     }}
     .reel-item {{
-        width:80px; height:35px; display:flex; align-items:center; justify-content:center;
+        width:64px; height:30px; display:flex; align-items:center; justify-content:center;
         background:#fff; box-sizing:border-box; padding:1px;
     }}
     .reel-item img {{
-        max-width:76px; max-height:33px; width:auto; height:auto; object-fit:contain; display:block;
+        max-width:60px; max-height:28px; width:auto; height:auto; object-fit:contain; display:block;
     }}
     .reel-item .fallback {{
-        font-weight:bold; color:#8b0000; font-size:11px; text-align:center;
+        font-weight:bold; color:#8b0000; font-size:9px; text-align:center;
     }}
     @keyframes rainbow {{
         0% {{ color:#ff0000; text-shadow: 0 0 15px #ff0000; }}
@@ -180,7 +180,7 @@ if st.session_state.show_gacha and st.session_state.results:
     const menList = {men_js};
     const guestList = {guest_js};
     const womenList = {women_js};
-    const ITEM_H = 35;
+    const ITEM_H = 30;
     
     function buildReel(elId, list) {{
         const el = document.getElementById(elId);
