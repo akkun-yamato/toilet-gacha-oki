@@ -14,20 +14,20 @@ BASE_URL = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main
 NORMAL_IMG = f"{BASE_URL}/yamato-god2-normal.png"
 PEKA_IMG = f"{BASE_URL}/yamato-god2-peka.png"
 
-NAME_TO_IMG = {
-    "あっくん": "akkun.png", "かんぬし": "kannushi.png", "しゃっちょ": "shaccho.png",
-    "はっしー": "hasshii.png", "しゅんちゃん": "shun-chan.png", "けんちゃん": "ken-chan.png",
-    "こうちゃん大": "kou-chan-dai.png", "こうちゃん小": "kou-chan-sho.png", "しんや": "shinya.png",
-    "まさゆき": "masayuki.png", "なおきち": "naokichi.png", "まーくん": "maakun.png",
-    "やまぴー": "yamapii.png", "りょうちん": "ryouchin.png", "けんたくん": "kenta-kun.png",
-    "いっちー": "icchii.png", "かずえちゃん": "kazue-chan.png", "しげちゃん": "shige-chan.png",
-    "ねえさん": "neesan.png", "のぶこちゃん": "nobuko-chan.png", "とももん": "tomomon.png",
-    "のりぴー": "noripii.png", "ちーかわ": "chiikawa.png",
+# メンバーごとの色（参考画像のテイスト）
+NAME_COLORS = {
+    "あっくん": "#4ecdc4", "かんぬし": "#45b7d1", "しゃっちょ": "#ff6b6b",
+    "はっしー": "#feca57", "しゅんちゃん": "#ff9ff3", "けんちゃん": "#5f27cd",
+    "こうちゃん大": "#00d2d3", "こうちゃん小": "#a0e157", "しんや": "#ff6348",
+    "まさゆき": "#1dd1a1", "なおきち": "#ffa502", "まーくん": "#eccc68",
+    "やまぴー": "#ff7f50", "りょうちん": "#7bed9f", "けんたくん": "#70a1ff",
+    "いっちー": "#f368e0", "かずえちゃん": "#ff6b9d", "しげちゃん": "#48dbfb",
+    "ねえさん": "#ee5a6f", "のぶこちゃん": "#c56cf0", "とももん": "#ff9f43",
+    "のりぴー": "#feca57", "ちーかわ": "#ff6b9d",
 }
 
-def img_url(name):
-    fn = NAME_TO_IMG.get(name, "")
-    return f"{BASE_URL}/{fn}" if fn else ""
+def get_color(name):
+    return NAME_COLORS.get(name, "#333333")
 
 st.markdown("""
 <style>
@@ -109,18 +109,18 @@ if st.session_state.show_gacha and st.session_state.results:
     guest_items = build_reel_items(all_men, guest_winner)
     women_items = build_reel_items(all_women, women_winner)
 
-    def to_img_list(names):
-        return [{"name": n, "url": img_url(n)} for n in names]
+    def to_list(names):
+        return [{"name": n, "color": get_color(n)} for n in names]
 
-    men_js = json.dumps(to_img_list(men_items), ensure_ascii=False)
-    guest_js = json.dumps(to_img_list(guest_items), ensure_ascii=False)
-    women_js = json.dumps(to_img_list(women_items), ensure_ascii=False)
+    men_js = json.dumps(to_list(men_items), ensure_ascii=False)
+    guest_js = json.dumps(to_list(guest_items), ensure_ascii=False)
+    women_js = json.dumps(to_list(women_items), ensure_ascii=False)
 
     gacha_html = f"""
     <div class="cabinet-wrap" style="position:relative; width:400px; height:680px; margin:0 auto;">
         <img id="cabinet" src="{NORMAL_IMG}" style="position:absolute; top:0; left:0; width:400px; height:600px; z-index:1;"/>
         
-        <div class="reel-container" style="position:absolute; top:260px; left:100px; width:200px; height:90px; z-index:3; display:flex; gap:2px; justify-content:center;">
+        <div class="reel-container" style="position:absolute; top:215px; left:108px; width:185px; height:90px; z-index:3; display:flex; gap:2px; justify-content:center;">
             <div class="reel-window" id="rw-men">
                 <div class="reel-inner" id="ri-men"></div>
             </div>
@@ -139,12 +139,11 @@ if st.session_state.show_gacha and st.session_state.results:
     
     <style>
     .reel-window {{
-        width:64px; height:90px; overflow:hidden; position:relative;
-        background:#fff; border:2px solid #ffd700; border-radius:4px;
-        box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+        width:60px; height:90px; overflow:hidden; position:relative;
+        background: linear-gradient(180deg, #fafafa 0%, #ffffff 50%, #fafafa 100%);
+        border-radius:3px;
     }}
     .reel-window.win {{
-        border-color: #ff1493;
         box-shadow: 0 0 20px #ff1493, inset 0 0 10px rgba(255,20,147,0.3);
         animation: winFlash 0.5s linear infinite;
     }}
@@ -156,14 +155,17 @@ if st.session_state.show_gacha and st.session_state.results:
         position:absolute; top:0; left:0; width:100%;
     }}
     .reel-item {{
-        width:64px; height:30px; display:flex; align-items:center; justify-content:center;
-        background:#fff; box-sizing:border-box; padding:1px;
+        width:60px; height:30px; display:flex; align-items:center; justify-content:center;
+        box-sizing:border-box; padding:2px;
     }}
-    .reel-item img {{
-        max-width:60px; max-height:28px; width:auto; height:auto; object-fit:contain; display:block;
-    }}
-    .reel-item .fallback {{
-        font-weight:bold; color:#8b0000; font-size:9px; text-align:center;
+    .reel-item .name-tag {{
+        display:inline-block; padding:3px 5px; border-radius:10px;
+        background:#fff; font-weight:bold; font-size:10px;
+        text-align:center; line-height:1.1; white-space:nowrap;
+        text-shadow: 0 0 2px #fff, 1px 1px 1px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        max-width:54px; overflow:hidden; text-overflow:ellipsis;
+        border: 1px solid rgba(0,0,0,0.1);
     }}
     @keyframes rainbow {{
         0% {{ color:#ff0000; text-shadow: 0 0 15px #ff0000; }}
@@ -185,11 +187,7 @@ if st.session_state.show_gacha and st.session_state.results:
     function buildReel(elId, list) {{
         const el = document.getElementById(elId);
         el.innerHTML = list.map(it => {{
-            if (it.url) {{
-                return `<div class="reel-item"><img src="${{it.url}}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=fallback>${{it.name}}</div>';"/></div>`;
-            }} else {{
-                return `<div class="reel-item"><div class="fallback">${{it.name}}</div></div>`;
-            }}
+            return `<div class="reel-item"><span class="name-tag" style="color:${{it.color}};">${{it.name}}</span></div>`;
         }}).join('');
     }}
     
