@@ -28,6 +28,10 @@ h1 { color: #d6336c; text-align: center; font-size: 28px; text-shadow: 2px 2px 0
 }
 .stCheckbox label { font-size: 16px !important; font-weight: bold !important; color: #333 !important; }
 div[data-testid="stExpander"] summary { color: #333 !important; font-weight: bold !important; }
+@media (max-width: 600px) {
+    h1 { font-size: 20px; }
+    .date-display { font-size: 14px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -37,7 +41,6 @@ st.markdown(f"<div class='date-display'>📅 {date.today().strftime('%Y年%m月%
 if "absent" not in st.session_state: st.session_state.absent = []
 if "results" not in st.session_state: st.session_state.results = None
 if "show_gacha" not in st.session_state: st.session_state.show_gacha = False
-if "reveal" not in st.session_state: st.session_state.reveal = False
 
 with st.expander("👥 本日の不在者チェック"):
     absent = []
@@ -57,11 +60,9 @@ with st.expander("👥 本日の不在者チェック"):
     if absent:
         st.info(f"本日の不在者: {len(absent)}名")
 
-# 事前抽選（まだ結果がなければ）
 if not st.session_state.results:
     st.session_state.results = draw_all(st.session_state.absent)
     st.session_state.show_gacha = True
-    st.session_state.reveal = False
 
 if st.session_state.show_gacha and st.session_state.results:
     r = st.session_state.results
@@ -85,9 +86,10 @@ if st.session_state.show_gacha and st.session_state.results:
     font-display:block;
 }}
 html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;}}
-#fit{{position:relative;width:100%;height:1000px;display:flex;flex-direction:column;align-items:center;padding-top:10px;}}
-#stage{{position:relative;width:480px;height:600px;flex:none;}}
-.cab{{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;user-select:none;}}
+#fit{{position:relative;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:10px;}}
+#stage-wrap{{position:relative;width:100%;max-width:480px;overflow:visible;}}
+#stage{{position:relative;width:480px;height:680px;flex:none;transform-origin:top center;}}
+.cab{{position:absolute;top:0;left:0;width:480px;height:600px;z-index:5;pointer-events:none;user-select:none;}}
 .cab.peka{{opacity:0;transition:opacity .08s;}}
 #stage.win .cab.peka{{animation:peka 0.5s steps(1) infinite;}}
 @keyframes peka{{0%{{opacity:1}}50%{{opacity:0}}}}
@@ -112,7 +114,8 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
 #stage.win .line{{opacity:1;animation:lineflash .5s ease-in-out infinite alternate;}}
 @keyframes lineflash{{from{{box-shadow:inset 0 0 0 2px #ff1493,inset 0 0 10px rgba(255,20,147,.6)}}to{{box-shadow:inset 0 0 0 2px #fff,inset 0 0 18px rgba(255,20,147,1)}}}}
 
-.hot{{position:absolute;z-index:6;border-radius:50%;cursor:pointer;background:transparent;border:0;padding:0;}}
+.hot{{position:absolute;z-index:6;border-radius:50%;cursor:pointer;background:transparent;border:0;padding:0;
+    -webkit-tap-highlight-color:rgba(255,255,255,.3);touch-action:manipulation;}}
 .hot:active{{background:rgba(255,255,255,.18);}}
 .hot.ready{{animation:ready 0.8s ease-in-out infinite alternate;}}
 @keyframes ready{{from{{box-shadow:0 0 0 0 rgba(255,215,0,0)}}to{{box-shadow:0 0 18px 6px rgba(255,215,0,.85)}}}}
@@ -126,34 +129,40 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
     66%{{color:#00bfff;text-shadow:0 0 15px #00bfff}}
     100%{{color:#ff1493;text-shadow:0 0 15px #ff1493}}
 }}
-#hint{{position:absolute;top:600px;left:0;right:0;text-align:center;font-size:14px;color:#d6336c;font-weight:bold;z-index:6;}}
+#hint{{position:absolute;top:605px;left:0;right:0;text-align:center;font-size:13px;color:#d6336c;font-weight:bold;z-index:6;}}
 #stage.win #hint{{display:none;}}
 
-/* 当選者カードエリア */
-#winners{{width:95%;max-width:900px;margin-top:40px;opacity:0;transition:opacity 1s;}}
+#winners{{width:95%;max-width:900px;margin-top:30px;opacity:0;transition:opacity 1s;}}
 #winners.show{{opacity:1;}}
 .winners-title{{color:#d6336c;font-size:22px;font-weight:bold;text-align:left;margin-bottom:10px;}}
-.winners-row{{display:flex;gap:12px;justify-content:space-between;}}
-.winner-card{{flex:1;background:linear-gradient(135deg, #fff8dc, #ffd700);
+.winners-row{{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;}}
+.winner-card{{flex:1;min-width:240px;background:linear-gradient(135deg, #fff8dc, #ffd700);
     border:3px solid #ff1493;border-radius:12px;padding:14px;text-align:center;
-    box-shadow:0 0 20px rgba(255,20,147,0.6);}}
+    box-shadow:0 0 20px rgba(255,20,147,0.6);box-sizing:border-box;}}
 .winner-card h3{{color:#8b0000;margin:0;font-size:18px;}}
 .winner-card .wname{{color:#d6336c;font-size:28px;font-weight:bold;margin-top:10px;text-shadow:1px 1px 3px rgba(0,0,0,0.2);}}
+
+@media (max-width: 600px) {{
+    .winners-title{{font-size:18px;}}
+    .winner-card{{min-width:100%;}}
+}}
 </style>
 
 <div id="fit">
-  <div id="stage">
-    <div class="reel" id="r0"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
-    <div class="reel" id="r1"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
-    <div class="reel" id="r2"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
-    <img class="cab normal" src="{NORMAL_IMG}" alt="">
-    <img class="cab peka" src="{PEKA_IMG}" alt="">
-    <button class="hot ready" id="lever" title="レバー"></button>
-    <button class="hot" id="b0" title="左ストップ"></button>
-    <button class="hot" id="b1" title="中ストップ"></button>
-    <button class="hot" id="b2" title="右ストップ"></button>
-    <div id="hint">👆 レバーをクリックで回転 → ストップボタンで停止</div>
-    <div id="jackpot">🎉 当選確定！ 🎉</div>
+  <div id="stage-wrap">
+    <div id="stage">
+        <div class="reel" id="r0"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+        <div class="reel" id="r1"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+        <div class="reel" id="r2"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
+        <img class="cab normal" src="{NORMAL_IMG}" alt="">
+        <img class="cab peka" src="{PEKA_IMG}" alt="">
+        <button class="hot ready" id="lever" title="レバー"></button>
+        <button class="hot" id="b0" title="左ストップ"></button>
+        <button class="hot" id="b1" title="中ストップ"></button>
+        <button class="hot" id="b2" title="右ストップ"></button>
+        <div id="hint">👆 レバーをクリックで回転 → ストップボタンで停止</div>
+        <div id="jackpot">🎉 当選確定！ 🎉</div>
+    </div>
   </div>
   
   <div id="winners">
@@ -239,12 +248,23 @@ function makeCell(name, w, h){{
 }}
 
 const stage = document.getElementById('stage');
+const stageWrap = document.getElementById('stage-wrap');
 let reels=[], playing=false;
 
 for (const [id,h] of Object.entries(HOT_POS)){{
     const el=document.getElementById(id);
     Object.assign(el.style,{{left:(h.x-h.r)+'px',top:(h.y-h.r)+'px',width:(h.r*2)+'px',height:(h.r*2)+'px'}});
 }}
+
+// スマホ対応: 画面幅に合わせて拡縮
+function fitStage(){{
+    const parentWidth = stageWrap.offsetWidth;
+    const scale = Math.min(1, parentWidth / 480);
+    stage.style.transform = `scale(${{scale}})`;
+    stageWrap.style.height = (680 * scale) + 'px';
+}}
+window.addEventListener('resize', fitStage);
+setTimeout(fitStage, 50);
 
 function render(r){{
     const p = ((r.pos % r.N)+r.N)%r.N;
@@ -274,6 +294,7 @@ function build(){{
         return {{ el, strip, order, names, N, cellH, offsetTop:BLEED, pos:Math.random()*N, speed:0, state:'stop' }};
     }});
     reels.forEach(render);
+    fitStage();
 }}
 
 function start(){{
@@ -336,25 +357,27 @@ function checkEnd(){{
     if(reels.every(r=>r.state==='stop')){{
         stage.classList.add('win');
         setTimeout(()=>stage.classList.add('hold'),1800);
-        // 2秒後に当選者カードをフェードイン表示
         setTimeout(()=>{{
             document.getElementById('winners').classList.add('show');
         }}, 2000);
     }}
 }}
 
-document.getElementById('lever').onclick = start;
-[0,1,2].forEach(i => document.getElementById('b'+i).onclick = () => stop(i));
+// タッチイベントとクリックイベント両対応
+function bindButton(el, fn){{
+    el.addEventListener('click', fn);
+    el.addEventListener('touchend', (e)=>{{ e.preventDefault(); fn(); }});
+}}
+bindButton(document.getElementById('lever'), start);
+[0,1,2].forEach(i => bindButton(document.getElementById('b'+i), () => stop(i)));
 </script>
     """
-    components.html(gacha_html, height=1020)
+    components.html(gacha_html, height=1000)
 
-    # 操作ボタン（Streamlit側）
     cc1, cc2 = st.columns(2)
     with cc1:
         if st.button("🔄 引き直す"):
             st.session_state.results = draw_all(st.session_state.absent)
-            st.session_state.reveal = False
             st.rerun()
     with cc2:
         if st.button("✅ この結果で確定！"):
@@ -362,7 +385,6 @@ document.getElementById('lever').onclick = start;
             st.success("保存しました！お疲れさまでした🎉")
             st.session_state.results = None
             st.session_state.show_gacha = False
-            st.session_state.reveal = False
             time.sleep(2)
             st.rerun()
 
