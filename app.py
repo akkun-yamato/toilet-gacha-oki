@@ -168,22 +168,19 @@ body {{
 }}
 .cabinet-peka.show {{
     opacity: 1;
-    animation: pekaFlash 0.3s infinite alternate, rainbowHue 2s linear infinite;
+    animation: pekaFlash 0.4s infinite alternate;
 }}
 @keyframes pekaFlash {{
-    0% {{ filter: brightness(1) saturate(1); }}
-    100% {{ filter: brightness(1.5) saturate(1.5) drop-shadow(0 0 25px #ffd700); }}
+    0% {{ filter: brightness(1); }}
+    100% {{ filter: brightness(1.4) drop-shadow(0 0 15px rgba(255,215,0,0.8)); }}
 }}
-@keyframes rainbowHue {{
-    0% {{ filter: hue-rotate(0deg) brightness(1.3) saturate(1.5); }}
-    100% {{ filter: hue-rotate(360deg) brightness(1.3) saturate(1.5); }}
-}}
+/* リール窓：1行分だけ見えるようにする（本物のスロットと同じ） */
 .reels {{
     position: absolute;
-    top: 232px;
-    left: 148px;
-    width: 212px;
-    height: 108px;
+    top: 268px;
+    left: 150px;
+    width: 208px;
+    height: 42px;
     display: flex;
     gap: 2px;
     z-index: 5;
@@ -194,7 +191,7 @@ body {{
     background: linear-gradient(180deg, #fff8e1 0%, #fff 50%, #fff8e1 100%);
     position: relative;
     border-radius: 2px;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
 }}
 .reel-inner {{
     position: absolute;
@@ -203,46 +200,31 @@ body {{
     left: 0;
 }}
 .reel-item {{
-    height: 36px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 15px;
     font-weight: 900;
     color: #4a0e4e;
-    border-bottom: 1px dashed #ccc;
-    background: linear-gradient(180deg, transparent 0%, rgba(255,215,0,0.08) 100%);
     text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
     letter-spacing: 1px;
+    line-height: 1;
+    padding: 0 4px;
+    box-sizing: border-box;
+    text-align: center;
 }}
 .reel-item.winner {{
     color: #c71585;
     background: linear-gradient(90deg, #ffd700 0%, #fff 50%, #ffd700 100%);
-    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 0 0 8px #ffd700;
-    font-weight: 900;
-    animation: winnerGlow 0.5s infinite alternate;
-}}
-@keyframes winnerGlow {{
-    0% {{ box-shadow: inset 0 0 10px rgba(255,215,0,0.5); }}
-    100% {{ box-shadow: inset 0 0 20px rgba(255,215,0,1), 0 0 15px #ffd700; }}
+    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 0 0 6px #ffd700;
 }}
 .reel-glass {{
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.2) 100%);
     pointer-events: none;
     z-index: 3;
-}}
-.center-line {{
-    position: absolute;
-    top: 268px;
-    left: 148px;
-    width: 212px;
-    height: 36px;
-    border-top: 2px solid rgba(255,20,147,0.5);
-    border-bottom: 2px solid rgba(255,20,147,0.5);
-    pointer-events: none;
-    z-index: 6;
 }}
 .jackpot {{
     position: absolute;
@@ -280,13 +262,12 @@ body {{
         height: 400px;
     }}
     .reels {{
-        top: 155px;
-        left: 99px;
-        width: 141px;
-        height: 72px;
+        top: 179px;
+        left: 100px;
+        width: 139px;
+        height: 28px;
     }}
-    .reel-item {{ height: 24px; font-size: 11px; }}
-    .center-line {{ top: 179px; left: 99px; width: 141px; height: 24px; }}
+    .reel-item {{ height: 28px; font-size: 11px; }}
     .jackpot {{ font-size: 20px; }}
 }}
 </style>
@@ -300,7 +281,6 @@ body {{
         <div class="reel"><div class="reel-inner" id="reel2"></div><div class="reel-glass"></div></div>
         <div class="reel"><div class="reel-inner" id="reel3"></div><div class="reel-glass"></div></div>
     </div>
-    <div class="center-line"></div>
     <div class="jackpot" id="jackpot">✨ 当選確定！ ✨</div>
 </div>
 <script>
@@ -312,10 +292,10 @@ const guestWin = {guest_win_js};
 const womenWin = {women_win_js};
 
 const isMobile = window.innerWidth <= 600;
-const itemHeight = isMobile ? 24 : 36;
+const itemHeight = isMobile ? 28 : 42;
 
 function buildReel(list, winner) {{
-    const loops = 30;
+    const loops = 25;
     let html = '';
     for (let i = 0; i < loops; i++) {{
         const shuffled = [...list].sort(() => Math.random() - 0.5);
@@ -323,11 +303,8 @@ function buildReel(list, winner) {{
             html += `<div class="reel-item">${{name}}</div>`;
         }}
     }}
-    const dummy1 = list.find(n => n !== winner) || list[0];
-    const dummy2 = list.find(n => n !== winner && n !== dummy1) || list[0];
-    html += `<div class="reel-item">${{dummy1}}</div>`;
+    // 最後に当選者を1個だけ配置（窓は1行だけ見えるから）
     html += `<div class="reel-item winner">${{winner}}</div>`;
-    html += `<div class="reel-item">${{dummy2}}</div>`;
     return html;
 }}
 
@@ -339,10 +316,14 @@ reel1.innerHTML = buildReel(menList, menWin);
 reel2.innerHTML = buildReel(guestList, guestWin);
 reel3.innerHTML = buildReel(womenList, womenWin);
 
+// 当選者を窓中央に止める計算：
+// 窓は1行分（itemHeight）だから、winner要素のtopを 0 に合わせる
+// つまり reel-inner の top = -(winnerのindex * itemHeight)
 function getStopPos(reel) {{
+    const items = reel.querySelectorAll('.reel-item');
     const winnerItem = reel.querySelector('.reel-item.winner');
-    const idx = Array.from(reel.querySelectorAll('.reel-item')).indexOf(winnerItem);
-    return -(idx * itemHeight - itemHeight);
+    const idx = Array.from(items).indexOf(winnerItem);
+    return -(idx * itemHeight);
 }}
 
 const d1 = 2000, d2 = 3500, d3 = 5000;
