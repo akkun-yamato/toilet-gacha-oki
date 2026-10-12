@@ -28,14 +28,6 @@ h1 { color: #d6336c; text-align: center; font-size: 28px; text-shadow: 2px 2px 0
 }
 .stCheckbox label { font-size: 16px !important; font-weight: bold !important; color: #333 !important; }
 div[data-testid="stExpander"] summary { color: #333 !important; font-weight: bold !important; }
-.winner-card {
-    background: linear-gradient(135deg, #fff8dc, #ffd700);
-    border: 3px solid #ff1493; border-radius: 12px;
-    padding: 12px; text-align: center; margin: 8px;
-    box-shadow: 0 0 20px rgba(255,20,147,0.6);
-}
-.winner-card h3 { color: #8b0000; margin: 0; font-size: 18px; }
-.winner-card .name { color: #d6336c; font-size: 24px; font-weight: bold; margin-top: 8px; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -45,6 +37,7 @@ st.markdown(f"<div class='date-display'>📅 {date.today().strftime('%Y年%m月%
 if "absent" not in st.session_state: st.session_state.absent = []
 if "results" not in st.session_state: st.session_state.results = None
 if "show_gacha" not in st.session_state: st.session_state.show_gacha = False
+if "reveal" not in st.session_state: st.session_state.reveal = False
 
 with st.expander("👥 本日の不在者チェック"):
     absent = []
@@ -68,6 +61,7 @@ with st.expander("👥 本日の不在者チェック"):
 if not st.session_state.results:
     st.session_state.results = draw_all(st.session_state.absent)
     st.session_state.show_gacha = True
+    st.session_state.reveal = False
 
 if st.session_state.show_gacha and st.session_state.results:
     r = st.session_state.results
@@ -91,7 +85,7 @@ if st.session_state.show_gacha and st.session_state.results:
     font-display:block;
 }}
 html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;}}
-#fit{{position:relative;width:100%;height:780px;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}}
+#fit{{position:relative;width:100%;height:1000px;display:flex;flex-direction:column;align-items:center;padding-top:10px;}}
 #stage{{position:relative;width:480px;height:600px;flex:none;}}
 .cab{{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;user-select:none;}}
 .cab.peka{{opacity:0;transition:opacity .08s;}}
@@ -134,6 +128,17 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
 }}
 #hint{{position:absolute;top:600px;left:0;right:0;text-align:center;font-size:14px;color:#d6336c;font-weight:bold;z-index:6;}}
 #stage.win #hint{{display:none;}}
+
+/* 当選者カードエリア */
+#winners{{width:95%;max-width:900px;margin-top:40px;opacity:0;transition:opacity 1s;}}
+#winners.show{{opacity:1;}}
+.winners-title{{color:#d6336c;font-size:22px;font-weight:bold;text-align:left;margin-bottom:10px;}}
+.winners-row{{display:flex;gap:12px;justify-content:space-between;}}
+.winner-card{{flex:1;background:linear-gradient(135deg, #fff8dc, #ffd700);
+    border:3px solid #ff1493;border-radius:12px;padding:14px;text-align:center;
+    box-shadow:0 0 20px rgba(255,20,147,0.6);}}
+.winner-card h3{{color:#8b0000;margin:0;font-size:18px;}}
+.winner-card .wname{{color:#d6336c;font-size:28px;font-weight:bold;margin-top:10px;text-shadow:1px 1px 3px rgba(0,0,0,0.2);}}
 </style>
 
 <div id="fit">
@@ -150,10 +155,18 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
     <div id="hint">👆 レバーをクリックで回転 → ストップボタンで停止</div>
     <div id="jackpot">🎉 当選確定！ 🎉</div>
   </div>
+  
+  <div id="winners">
+    <div class="winners-title">🏆 本日の当選者</div>
+    <div class="winners-row">
+        <div class="winner-card"><h3>🚹 男性トイレ</h3><div class="wname">{men_winner or '該当者なし'}</div></div>
+        <div class="winner-card"><h3>🚻 ゲストトイレ</h3><div class="wname">{guest_winner or '該当者なし'}</div></div>
+        <div class="winner-card"><h3>🚺 女子トイレ</h3><div class="wname">{women_winner or '該当者なし'}</div></div>
+    </div>
+  </div>
 </div>
 
 <script>
-// 筐体画像(960x1200)での位置 → ステージ(480x600)用に0.5倍
 const HOLES = [
     {{ x:315*0.5, y:443*0.5, w:117*0.5, h:201*0.5 }},
     {{ x:452*0.5, y:443*0.5, w:118*0.5, h:201*0.5 }},
@@ -228,14 +241,12 @@ function makeCell(name, w, h){{
 const stage = document.getElementById('stage');
 let reels=[], playing=false;
 
-// hotspot配置
 for (const [id,h] of Object.entries(HOT_POS)){{
     const el=document.getElementById(id);
     Object.assign(el.style,{{left:(h.x-h.r)+'px',top:(h.y-h.r)+'px',width:(h.r*2)+'px',height:(h.r*2)+'px'}});
 }}
 
 function render(r){{
-    // 上→下へ流れるように pos を負方向に進める
     const p = ((r.pos % r.N)+r.N)%r.N;
     const y = -(p + r.N) * r.cellH + r.offsetTop;
     r.strip.style.transform = `translateY(${{y}}px)`;
@@ -269,6 +280,7 @@ function start(){{
     if (!reels.length) return;
     if (reels.some(r=>r.state!=='stop')) return;
     stage.classList.remove('win','hold');
+    document.getElementById('winners').classList.remove('show');
     reels.forEach(r=>{{ r.state='spin'; r.speed=0; r.el.classList.add('blur'); }});
     document.getElementById('lever').classList.remove('ready');
     [0,1,2].forEach(i=>document.getElementById('b'+i).classList.add('ready'));
@@ -285,10 +297,8 @@ function stop(i){{
         checkEnd(); return;
     }}
     const k = r.order.indexOf(winnerIdx);
-    // 上から下に流れる → pos を減少方向に動かす
     let topRow = k-1;
     let base = Math.floor(r.pos);
-    // 現在位置より少し先の位置で止める（最低3コマは回る）
     let t = base + ((topRow - base) % r.N + r.N) % r.N;
     if (t - r.pos < 3) t += r.N;
     r.target=t; r.state='braking'; r.from=r.pos;
@@ -301,7 +311,7 @@ function loop(now){{
     for(const r of reels){{
         if(r.state==='spin'){{
             r.speed=Math.min(r.speed+0.02,0.42);
-            r.pos += r.speed; // 上→下に流れる
+            r.pos += r.speed;
             active=true;
         }}
         else if(r.state==='braking'){{
@@ -326,8 +336,10 @@ function checkEnd(){{
     if(reels.every(r=>r.state==='stop')){{
         stage.classList.add('win');
         setTimeout(()=>stage.classList.add('hold'),1800);
-        // 結果通知
-        window.parent.postMessage({{type:'gacha_done'}}, '*');
+        // 2秒後に当選者カードをフェードイン表示
+        setTimeout(()=>{{
+            document.getElementById('winners').classList.add('show');
+        }}, 2000);
     }}
 }}
 
@@ -335,22 +347,14 @@ document.getElementById('lever').onclick = start;
 [0,1,2].forEach(i => document.getElementById('b'+i).onclick = () => stop(i));
 </script>
     """
-    components.html(gacha_html, height=800)
+    components.html(gacha_html, height=1020)
 
-    # 結果操作ボタン（常時表示）
-    st.markdown("### 🏆 本日の当選者")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"<div class='winner-card'><h3>🚹 男性トイレ</h3><div class='name'>{men_winner or '該当者なし'}</div></div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"<div class='winner-card'><h3>🚻 ゲストトイレ</h3><div class='name'>{guest_winner or '該当者なし'}</div></div>", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"<div class='winner-card'><h3>🚺 女子トイレ</h3><div class='name'>{women_winner or '該当者なし'}</div></div>", unsafe_allow_html=True)
-
+    # 操作ボタン（Streamlit側）
     cc1, cc2 = st.columns(2)
     with cc1:
         if st.button("🔄 引き直す"):
             st.session_state.results = draw_all(st.session_state.absent)
+            st.session_state.reveal = False
             st.rerun()
     with cc2:
         if st.button("✅ この結果で確定！"):
@@ -358,6 +362,7 @@ document.getElementById('lever').onclick = start;
             st.success("保存しました！お疲れさまでした🎉")
             st.session_state.results = None
             st.session_state.show_gacha = False
+            st.session_state.reveal = False
             time.sleep(2)
             st.rerun()
 
