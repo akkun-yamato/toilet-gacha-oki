@@ -64,10 +64,10 @@ with st.expander("👥 本日の不在者チェック"):
     if absent:
         st.info(f"本日の不在者: {len(absent)}名")
 
-if st.button("🕹️ レバーON！ 🎰", use_container_width=True):
+# 事前抽選（まだ結果がなければ）
+if not st.session_state.results:
     st.session_state.results = draw_all(st.session_state.absent)
     st.session_state.show_gacha = True
-    st.rerun()
 
 if st.session_state.show_gacha and st.session_state.results:
     r = st.session_state.results
@@ -78,13 +78,9 @@ if st.session_state.show_gacha and st.session_state.results:
     all_men = get_members("M")
     all_women = get_members("F")
 
-    reel_men_names = all_men
-    reel_guest_names = all_men
-    reel_women_names = all_women
-    
-    men_js = json.dumps(reel_men_names, ensure_ascii=False)
-    guest_js = json.dumps(reel_guest_names, ensure_ascii=False)
-    women_js = json.dumps(reel_women_names, ensure_ascii=False)
+    men_js = json.dumps(all_men, ensure_ascii=False)
+    guest_js = json.dumps(all_men, ensure_ascii=False)
+    women_js = json.dumps(all_women, ensure_ascii=False)
 
     gacha_html = f"""
 <style>
@@ -95,8 +91,8 @@ if st.session_state.show_gacha and st.session_state.results:
     font-display:block;
 }}
 html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family:"MR","Hiragino Maru Gothic ProN",sans-serif;}}
-#fit{{position:relative;width:100%;height:720px;display:flex;align-items:center;justify-content:center;}}
-#stage{{position:relative;width:480px;height:600px;transform-origin:center center;flex:none;}}
+#fit{{position:relative;width:100%;height:780px;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}}
+#stage{{position:relative;width:480px;height:600px;flex:none;}}
 .cab{{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;user-select:none;}}
 .cab.peka{{opacity:0;transition:opacity .08s;}}
 #stage.win .cab.peka{{animation:peka 0.5s steps(1) infinite;}}
@@ -122,15 +118,22 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
 #stage.win .line{{opacity:1;animation:lineflash .5s ease-in-out infinite alternate;}}
 @keyframes lineflash{{from{{box-shadow:inset 0 0 0 2px #ff1493,inset 0 0 10px rgba(255,20,147,.6)}}to{{box-shadow:inset 0 0 0 2px #fff,inset 0 0 18px rgba(255,20,147,1)}}}}
 
-#jackpot{{position:absolute;top:88%;left:0;right:0;text-align:center;font-size:22px;font-weight:900;z-index:7;opacity:0;color:#fff;
+.hot{{position:absolute;z-index:6;border-radius:50%;cursor:pointer;background:transparent;border:0;padding:0;}}
+.hot:active{{background:rgba(255,255,255,.18);}}
+.hot.ready{{animation:ready 0.8s ease-in-out infinite alternate;}}
+@keyframes ready{{from{{box-shadow:0 0 0 0 rgba(255,215,0,0)}}to{{box-shadow:0 0 18px 6px rgba(255,215,0,.85)}}}}
+
+#jackpot{{position:absolute;top:620px;left:0;right:0;text-align:center;font-size:26px;font-weight:900;z-index:7;opacity:0;color:#fff;
     animation:rainbow 1s linear infinite;}}
 #stage.win #jackpot{{opacity:1;}}
 @keyframes rainbow{{
-    0%{{color:#ff0000;text-shadow:0 0 12px #ff0000}}
-    33%{{color:#ffd700;text-shadow:0 0 12px #ffd700}}
-    66%{{color:#00bfff;text-shadow:0 0 12px #00bfff}}
-    100%{{color:#ff1493;text-shadow:0 0 12px #ff1493}}
+    0%{{color:#ff0000;text-shadow:0 0 15px #ff0000}}
+    33%{{color:#ffd700;text-shadow:0 0 15px #ffd700}}
+    66%{{color:#00bfff;text-shadow:0 0 15px #00bfff}}
+    100%{{color:#ff1493;text-shadow:0 0 15px #ff1493}}
 }}
+#hint{{position:absolute;top:600px;left:0;right:0;text-align:center;font-size:14px;color:#d6336c;font-weight:bold;z-index:6;}}
+#stage.win #hint{{display:none;}}
 </style>
 
 <div id="fit">
@@ -140,17 +143,28 @@ html,body{{margin:0;padding:0;background:transparent;overflow:hidden;font-family
     <div class="reel" id="r2"><div class="strip"></div><div class="backlight"></div><div class="line"></div><div class="shade"></div><div class="glass"></div></div>
     <img class="cab normal" src="{NORMAL_IMG}" alt="">
     <img class="cab peka" src="{PEKA_IMG}" alt="">
+    <button class="hot ready" id="lever" title="レバー"></button>
+    <button class="hot" id="b0" title="左ストップ"></button>
+    <button class="hot" id="b1" title="中ストップ"></button>
+    <button class="hot" id="b2" title="右ストップ"></button>
+    <div id="hint">👆 レバーをクリックで回転 → ストップボタンで停止</div>
     <div id="jackpot">🎉 当選確定！ 🎉</div>
   </div>
 </div>
 
 <script>
-// 筐体画像(960x1200)での窓位置 → ステージ(480x600)用に0.5倍
+// 筐体画像(960x1200)での位置 → ステージ(480x600)用に0.5倍
 const HOLES = [
     {{ x:315*0.5, y:443*0.5, w:117*0.5, h:201*0.5 }},
     {{ x:452*0.5, y:443*0.5, w:118*0.5, h:201*0.5 }},
     {{ x:591*0.5, y:443*0.5, w:118*0.5, h:201*0.5 }},
 ];
+const HOT_POS = {{
+    lever: {{x:190*0.5, y:820*0.5, r:30*0.5}},
+    b0:    {{x:390*0.5, y:822*0.5, r:30*0.5}},
+    b1:    {{x:480*0.5, y:822*0.5, r:30*0.5}},
+    b2:    {{x:570*0.5, y:822*0.5, r:30*0.5}},
+}};
 const BLEED = 3;
 const ROWS = 3;
 
@@ -163,23 +177,19 @@ function makeCell(name, w, h){{
     const S=2, W=Math.round(w*S), H=Math.round(h*S);
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const x=cv.getContext('2d');
-    // クリーム背景
     const bg=x.createLinearGradient(0,0,0,H);
     bg.addColorStop(0,'#f3ead3'); bg.addColorStop(.5,'#fbf6e8'); bg.addColorStop(1,'#f0e6cc');
     x.fillStyle=bg; x.fillRect(0,0,W,H);
-    // 粒子
     for(let i=0;i<W*H/900;i++){{
         x.fillStyle='rgba(120,90,40,'+(Math.random()*.05)+')';
         x.fillRect(Math.random()*W,Math.random()*H,S,S);
     }}
     x.fillStyle='rgba(180,130,40,.35)';
     x.fillRect(0,0,W,1.2*S); x.fillRect(0,H-1.2*S,W,1.2*S);
-    // 影楕円
     x.save(); x.translate(W/2,H/2); x.scale(1,.62);
     const pg=x.createRadialGradient(0,0,4*S,0,0,W*.48);
     pg.addColorStop(0,'rgba(30,0,25,.18)'); pg.addColorStop(1,'rgba(30,0,25,0)');
     x.fillStyle=pg; x.beginPath(); x.arc(0,0,W*.48,0,7); x.fill(); x.restore();
-    // 行分割
     let lines=[name]; const len=[...name].length;
     if(len>=5 && name.endsWith('ちゃん')) lines=[name.slice(0,-3),'ちゃん'];
     else if(len>=6) lines=[name.slice(0,Math.ceil(len/2)),name.slice(Math.ceil(len/2))];
@@ -193,12 +203,10 @@ function makeCell(name, w, h){{
     const lh=fs*1.0, y0=H/2-(lines.length-1)*lh/2+fs*.05;
     const ys=lines.map((_,i)=>y0+i*lh);
     const each=f=>lines.forEach((l,i)=>f(l,W/2,ys[i]));
-    // 白縁
     x.lineWidth=fs*.30; x.strokeStyle='#fff';
     x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=3*S; x.shadowOffsetY=1*S;
     each((l,a,b)=>x.strokeText(l,a,b));
     x.shadowColor='transparent';
-    // 立体影
     for(let d=4;d>=1;d--){{
         x.lineWidth=fs*.17; x.strokeStyle='#000';
         each((l,a,b)=>x.strokeText(l,a+d*.35*S,b+d*.55*S));
@@ -207,7 +215,6 @@ function makeCell(name, w, h){{
     }}
     x.lineWidth=fs*.17; x.strokeStyle='#111';
     each((l,a,b)=>x.strokeText(l,a,b));
-    // 金グラデ
     lines.forEach((l,i)=>{{
         const y=ys[i], g=x.createLinearGradient(0,y-fs/2,0,y+fs/2);
         g.addColorStop(0,'#fffbe0'); g.addColorStop(.22,'#ffe866');
@@ -218,21 +225,29 @@ function makeCell(name, w, h){{
     return cv;
 }}
 
-let reels=[];
+const stage = document.getElementById('stage');
+let reels=[], playing=false;
+
+// hotspot配置
+for (const [id,h] of Object.entries(HOT_POS)){{
+    const el=document.getElementById(id);
+    Object.assign(el.style,{{left:(h.x-h.r)+'px',top:(h.y-h.r)+'px',width:(h.r*2)+'px',height:(h.r*2)+'px'}});
+}}
+
 function render(r){{
+    // 上→下へ流れるように pos を負方向に進める
     const p = ((r.pos % r.N)+r.N)%r.N;
     const y = -(p + r.N) * r.cellH + r.offsetTop;
     r.strip.style.transform = `translateY(${{y}}px)`;
 }}
 
-const stage = document.getElementById('stage');
-
 document.fonts.ready.then(() => document.fonts.load('900 40px MR')).then(build);
+
 function build(){{
     reels = HOLES.map((h,i)=>{{
         const el=document.getElementById('r'+i);
         const W=h.w+BLEED*2, H=h.h+BLEED*2;
-        Object.assign(el.style,{{left:h.x-BLEED+'px',top:h.y-BLEED+'px',width:W+'px',height:H+'px'}});
+        Object.assign(el.style,{{left:(h.x-BLEED)+'px',top:(h.y-BLEED)+'px',width:W+'px',height:H+'px'}});
         const cellH = h.h/ROWS;
         const names = REEL_NAMES[i];
         const N = names.length;
@@ -244,48 +259,63 @@ function build(){{
             strip.appendChild(c);
         }});
         const line = el.querySelector('.line');
-        Object.assign(line.style,{{top:BLEED+cellH+'px',height:cellH+'px'}});
-        return {{ el, strip, order, names, N, cellH, offsetTop:BLEED, pos:Math.random()*N, speed:0, state:'spin' }};
+        Object.assign(line.style,{{top:(BLEED+cellH)+'px',height:cellH+'px'}});
+        return {{ el, strip, order, names, N, cellH, offsetTop:BLEED, pos:Math.random()*N, speed:0, state:'stop' }};
     }});
     reels.forEach(render);
-    // 自動開始
-    setTimeout(() => {{
-        reels.forEach(r=>{{r.state='spin';r.speed=0;r.el.classList.add('blur');}});
-        requestAnimationFrame(loop);
-        // 順次停止
-        setTimeout(() => autoStop(0), 1500);
-        setTimeout(() => autoStop(1), 2200);
-        setTimeout(() => autoStop(2), 2900);
-    }}, 300);
 }}
 
-function autoStop(i){{
+function start(){{
+    if (!reels.length) return;
+    if (reels.some(r=>r.state!=='stop')) return;
+    stage.classList.remove('win','hold');
+    reels.forEach(r=>{{ r.state='spin'; r.speed=0; r.el.classList.add('blur'); }});
+    document.getElementById('lever').classList.remove('ready');
+    [0,1,2].forEach(i=>document.getElementById('b'+i).classList.add('ready'));
+    if(!playing){{ playing=true; requestAnimationFrame(loop); }}
+}}
+
+function stop(i){{
     const r=reels[i]; if(r.state!=='spin') return;
     const winnerName = WINNERS[i];
     const winnerIdx = r.names.indexOf(winnerName);
-    if(winnerIdx<0){{ r.state='stop'; r.el.classList.remove('blur'); checkEnd(); return; }}
+    if(winnerIdx<0){{
+        r.state='stop'; r.el.classList.remove('blur');
+        document.getElementById('b'+i).classList.remove('ready');
+        checkEnd(); return;
+    }}
     const k = r.order.indexOf(winnerIdx);
-    let top = k-1;
+    // 上から下に流れる → pos を減少方向に動かす
+    let topRow = k-1;
     let base = Math.floor(r.pos);
-    let t = base + ((top - base) % r.N + r.N) % r.N;
-    if(t - r.pos < 3) t += r.N;
+    // 現在位置より少し先の位置で止める（最低3コマは回る）
+    let t = base + ((topRow - base) % r.N + r.N) % r.N;
+    if (t - r.pos < 3) t += r.N;
     r.target=t; r.state='braking'; r.from=r.pos;
-    r.t0=performance.now(); r.dur = 380 + (t-r.pos)*6;
+    r.t0=performance.now(); r.dur = 400 + (t-r.pos)*8;
+    document.getElementById('b'+i).classList.remove('ready');
 }}
 
 function loop(now){{
     let active=false;
     for(const r of reels){{
-        if(r.state==='spin'){{ r.speed=Math.min(r.speed+0.02,0.42); r.pos+=r.speed; active=true; }}
+        if(r.state==='spin'){{
+            r.speed=Math.min(r.speed+0.02,0.42);
+            r.pos += r.speed; // 上→下に流れる
+            active=true;
+        }}
         else if(r.state==='braking'){{
             const u=Math.min(1,(now-r.t0)/r.dur), e=1-Math.pow(1-u,3);
             r.pos = r.from + (r.target-r.from)*e;
-            if(u>=1){{ r.pos=r.target; r.state='stop'; r.el.classList.remove('blur'); bounce(r); checkEnd(); }}
-            else active=true;
+            if(u>=1){{
+                r.pos=r.target; r.state='stop';
+                r.el.classList.remove('blur');
+                bounce(r); checkEnd();
+            }} else active=true;
         }}
         render(r);
     }}
-    if(active) requestAnimationFrame(loop);
+    if(active) requestAnimationFrame(loop); else playing=false;
 }}
 
 function bounce(r){{
@@ -295,13 +325,19 @@ function bounce(r){{
 function checkEnd(){{
     if(reels.every(r=>r.state==='stop')){{
         stage.classList.add('win');
-        setTimeout(()=>stage.classList.add('hold'),1600);
+        setTimeout(()=>stage.classList.add('hold'),1800);
+        // 結果通知
+        window.parent.postMessage({{type:'gacha_done'}}, '*');
     }}
 }}
+
+document.getElementById('lever').onclick = start;
+[0,1,2].forEach(i => document.getElementById('b'+i).onclick = () => stop(i));
 </script>
     """
-    components.html(gacha_html, height=740)
+    components.html(gacha_html, height=800)
 
+    # 結果操作ボタン（常時表示）
     st.markdown("### 🏆 本日の当選者")
     c1, c2, c3 = st.columns(3)
     with c1:
