@@ -117,10 +117,10 @@ if st.session_state.show_gacha and st.session_state.results:
     women_js = json.dumps(to_img_list(women_items), ensure_ascii=False)
 
     gacha_html = f"""
-    <div class="cabinet-wrap" style="position:relative; width:400px; height:600px; margin:0 auto;">
+    <div class="cabinet-wrap" style="position:relative; width:400px; height:680px; margin:0 auto;">
         <img id="cabinet" src="{NORMAL_IMG}" style="position:absolute; top:0; left:0; width:400px; height:600px; z-index:1;"/>
         
-        <div class="reel-container" style="position:absolute; top:222px; left:80px; width:240px; height:100px; z-index:3; display:flex; gap:3px; justify-content:center;">
+        <div class="reel-container" style="position:absolute; top:220px; left:78px; width:244px; height:105px; z-index:3; display:flex; gap:2px; justify-content:center;">
             <div class="reel-window" id="rw-men">
                 <div class="reel-inner" id="ri-men"></div>
             </div>
@@ -132,14 +132,14 @@ if st.session_state.show_gacha and st.session_state.results:
             </div>
         </div>
         
-        <div id="jackpot" style="position:absolute; top:572px; left:0; right:0; text-align:center; font-size:22px; font-weight:bold; z-index:5; opacity:0; animation:rainbow 1s linear infinite;">
+        <div id="jackpot" style="position:absolute; top:625px; left:0; right:0; text-align:center; font-size:26px; font-weight:bold; z-index:5; opacity:0; animation:rainbow 1s linear infinite;">
             🎉 当選確定！ 🎉
         </div>
     </div>
     
     <style>
     .reel-window {{
-        width:76px; height:100px; overflow:hidden; position:relative;
+        width:80px; height:105px; overflow:hidden; position:relative;
         background:#fff; border:2px solid #ffd700; border-radius:4px;
         box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
     }}
@@ -156,11 +156,11 @@ if st.session_state.show_gacha and st.session_state.results:
         position:absolute; top:0; left:0; width:100%;
     }}
     .reel-item {{
-        width:76px; height:33px; display:flex; align-items:center; justify-content:center;
-        background:#fff; box-sizing:border-box; padding:2px;
+        width:80px; height:35px; display:flex; align-items:center; justify-content:center;
+        background:#fff; box-sizing:border-box; padding:1px;
     }}
     .reel-item img {{
-        max-width:72px; max-height:30px; object-fit:contain; display:block;
+        max-width:76px; max-height:33px; width:auto; height:auto; object-fit:contain; display:block;
     }}
     .reel-item .fallback {{
         font-weight:bold; color:#8b0000; font-size:11px; text-align:center;
@@ -180,7 +180,7 @@ if st.session_state.show_gacha and st.session_state.results:
     const menList = {men_js};
     const guestList = {guest_js};
     const womenList = {women_js};
-    const ITEM_H = 33;
+    const ITEM_H = 35;
     
     function buildReel(elId, list) {{
         const el = document.getElementById(elId);
@@ -196,10 +196,7 @@ if st.session_state.show_gacha and st.session_state.results:
     function spin(innerId, windowId, list, delay) {{
         const inner = document.getElementById(innerId);
         const win = document.getElementById(windowId);
-        // 先頭に [above, winner, below] が配置されている
-        // 中央段(winner, index=1)を窓中央に表示: top = -(1*ITEM_H - ITEM_H) = 0
         const stopPos = 0;
-        // 開始位置: 大きく下にずらしてから、上に戻すことで上→下に流れる見た目
         const startPos = -(list.length - 10) * ITEM_H;
         inner.style.transition = 'none';
         inner.style.top = startPos + 'px';
@@ -228,7 +225,7 @@ if st.session_state.show_gacha and st.session_state.results:
     }}, 500);
     </script>
     """
-    components.html(gacha_html, height=650)
+    components.html(gacha_html, height=720)
 
     st.markdown("### 🏆 本日の当選者")
     c1, c2, c3 = st.columns(3)
