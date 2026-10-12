@@ -6,7 +6,7 @@ import json
 from database import init_db, get_members, save_result, get_history, reset_round, clear_history
 from gacha import draw_all
 
-st.set_page_config(page_title="沖ドキ風 トイレ掃除ガチャ", page_icon="🌺", layout="wide")
+st.set_page_config(page_title="YAMATO 神々の情熱 トイレ掃除ガチャ", page_icon="🎰", layout="wide")
 init_db()
 
 st.markdown("""
@@ -18,8 +18,8 @@ st.markdown("""
 h1 {
     text-align: center;
     color: #ffd700;
-    text-shadow: 2px 2px 0 #ff1493, 4px 4px 10px rgba(0,0,0,0.8);
-    font-size: 2.5em !important;
+    text-shadow: 2px 2px 0 #c71585, 4px 4px 10px rgba(0,0,0,0.8);
+    font-size: 2.3em !important;
     letter-spacing: 2px;
 }
 .date-display {
@@ -65,7 +65,7 @@ h1 {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1>🌺 沖ドキ風 トイレ掃除ガチャ 🌺</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🎰 YAMATO 神々の情熱 トイレ掃除ガチャ 🎰</h1>", unsafe_allow_html=True)
 st.markdown(f"<div class='date-display'>📅 {date.today().strftime('%Y年%m月%d日')}</div>", unsafe_allow_html=True)
 
 if "absent" not in st.session_state: st.session_state.absent = []
@@ -112,6 +112,9 @@ if st.session_state.show_slot and st.session_state.results:
     guest_win_js = json.dumps(guest_winner, ensure_ascii=False)
     women_win_js = json.dumps(women_winner, ensure_ascii=False)
 
+    img_normal = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main/yamato_god2_normal.png"
+    img_peka = "https://raw.githubusercontent.com/akkun-yamato/toilet-gacha-oki/main/yamato-god2-peka.png"
+
     slot_html = f"""
 <!DOCTYPE html>
 <html>
@@ -119,148 +122,53 @@ if st.session_state.show_slot and st.session_state.results:
 <style>
 body {{
     margin: 0;
-    padding: 10px;
+    padding: 0;
     background: radial-gradient(ellipse at center, #2a0845 0%, #000 100%);
     font-family: 'Arial Black', 'Impact', sans-serif;
     overflow: hidden;
 }}
-.cabinet {{
-    max-width: 480px;
-    margin: 0 auto;
+.cabinet-wrap {{
     position: relative;
-    background: linear-gradient(180deg, #4a0e4e 0%, #2a0845 50%, #1a0033 100%);
-    border-radius: 15px 15px 25px 25px;
-    padding: 10px;
-    box-shadow: 0 0 60px rgba(255,20,147,0.6), inset 0 0 30px rgba(0,0,0,0.5);
-    border: 3px solid #ffd700;
+    width: 480px;
+    height: 600px;
+    margin: 10px auto;
 }}
-.top-vent {{
-    display: flex;
-    justify-content: space-between;
-    height: 20px;
-    background: repeating-linear-gradient(90deg, #333 0 3px, #111 3px 6px);
-    border-radius: 10px 10px 0 0;
-    margin-bottom: 5px;
-}}
-.bonus-plate {{
-    background: linear-gradient(180deg, #ffd700 0%, #ff8c00 50%, #8b4513 100%);
-    border: 3px solid #ffd700;
-    border-radius: 10px;
-    padding: 5px;
-    text-align: center;
-    margin: 0 auto 8px;
-    width: 60%;
-    box-shadow: 0 0 20px #ffd700, inset 0 0 10px rgba(255,255,255,0.5);
-}}
-.bonus-plate .text {{
-    color: #8b0000;
-    font-size: 24px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff;
-    font-style: italic;
-}}
-.hibiscus-panel {{
-    background: linear-gradient(180deg, #1a0033 0%, #2a0845 100%);
-    border: 3px solid #ffd700;
-    border-radius: 10px;
-    padding: 10px 5px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 15px rgba(255,215,0,0.3);
-    position: relative;
-}}
-.hibiscus-panel::before {{
-    content: 'OKI-DOKI';
+.cabinet-bg {{
     position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #ffd700;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-shadow: 0 0 5px #ff1493;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: url('{img_normal}');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity 0.3s;
 }}
-.hibiscus-panel::after {{
-    content: 'OKI-DOKI';
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #ffd700;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-shadow: 0 0 5px #ff1493;
+.cabinet-bg.peka {{
+    background-image: url('{img_peka}');
+    animation: pekaFlash 0.4s infinite alternate;
 }}
-.flower {{
-    width: 42px;
-    height: 42px;
-    position: relative;
-    filter: brightness(0.3) saturate(0.5);
-    transition: all 0.2s;
+@keyframes pekaFlash {{
+    0% {{ filter: brightness(1); }}
+    100% {{ filter: brightness(1.4) drop-shadow(0 0 20px #ffd700); }}
 }}
-.flower.lit {{
-    filter: brightness(1.3) saturate(1.5) drop-shadow(0 0 15px #ff1493);
-    animation: flowerPulse 0.3s infinite alternate;
-}}
-@keyframes flowerPulse {{
-    0% {{ transform: scale(1) rotate(0deg); }}
-    100% {{ transform: scale(1.15) rotate(5deg); }}
-}}
-.petal {{
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: radial-gradient(circle at 30% 30%, #ff6b6b 0%, #c70000 70%, #8b0000 100%);
-    border-radius: 50% 10% 50% 10%;
-    left: 50%;
-    top: 50%;
-    transform-origin: 0 0;
-}}
-.petal:nth-child(1) {{ transform: rotate(0deg) translate(-50%, -100%); }}
-.petal:nth-child(2) {{ transform: rotate(72deg) translate(-50%, -100%); }}
-.petal:nth-child(3) {{ transform: rotate(144deg) translate(-50%, -100%); }}
-.petal:nth-child(4) {{ transform: rotate(216deg) translate(-50%, -100%); }}
-.petal:nth-child(5) {{ transform: rotate(288deg) translate(-50%, -100%); }}
-.flower-center {{
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: radial-gradient(circle, #ffeb3b 0%, #ff8c00 100%);
-    border-radius: 50%;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    box-shadow: 0 0 8px #ffd700;
-}}
-.reel-frame {{
-    background: linear-gradient(180deg, #ffd700 0%, #ff8c00 50%, #8b4513 100%);
-    padding: 6px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(255,215,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
-    margin-bottom: 8px;
-}}
+/* リール窓3つを画像の該当位置に重ねる */
 .reels {{
+    position: absolute;
+    top: 232px;
+    left: 148px;
+    width: 212px;
+    height: 108px;
     display: flex;
-    gap: 4px;
-    background: #000;
-    padding: 4px;
-    border-radius: 6px;
-    position: relative;
+    gap: 2px;
+    z-index: 2;
 }}
 .reel {{
     flex: 1;
-    height: 180px;
     overflow: hidden;
-    background: linear-gradient(180deg, #fff 0%, #f0f0f0 50%, #fff 100%);
-    border-radius: 4px;
+    background: linear-gradient(180deg, #fafafa 0%, #e8e8e8 50%, #fafafa 100%);
     position: relative;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+    border-radius: 2px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
 }}
 .reel-inner {{
     position: absolute;
@@ -269,164 +177,72 @@ body {{
     left: 0;
 }}
 .reel-item {{
-    height: 60px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 13px;
     font-weight: 900;
     color: #333;
-    border-bottom: 1px dashed #ccc;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.1) 50%, transparent 100%);
+    border-bottom: 1px dashed #bbb;
 }}
 .reel-item.winner {{
     color: #c71585;
     background: linear-gradient(90deg, #ffd700 0%, #fff 50%, #ffd700 100%);
     text-shadow: 1px 1px 0 #fff;
 }}
-.center-line {{
-    position: absolute;
-    top: 60px;
-    left: 0;
-    right: 0;
-    height: 60px;
-    border-top: 2px solid #ff1493;
-    border-bottom: 2px solid #ff1493;
-    pointer-events: none;
-    z-index: 5;
-    box-shadow: 0 0 10px #ff1493;
-}}
 .reel-glass {{
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
+    pointer-events: none;
+    z-index: 3;
+}}
+.center-line {{
+    position: absolute;
+    top: 36px;
+    left: 148px;
+    width: 212px;
+    height: 36px;
+    border-top: 1px solid rgba(255,20,147,0.4);
+    border-bottom: 1px solid rgba(255,20,147,0.4);
     pointer-events: none;
     z-index: 4;
 }}
-.roles {{
-    display: flex;
-    justify-content: space-around;
-    margin: 5px 0 8px;
-    color: #ffd700;
-    font-weight: 900;
-    text-shadow: 1px 1px 2px #000;
-    font-size: 13px;
-    letter-spacing: 1px;
-}}
-.score-panel {{
-    background: #000;
-    border: 2px solid #ffd700;
-    border-radius: 5px;
-    padding: 5px;
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 8px;
-}}
-.score-box {{
-    text-align: center;
-}}
-.score-box .label {{
-    color: #ffd700;
-    font-size: 9px;
-    font-weight: bold;
-    letter-spacing: 1px;
-}}
-.score-box .num {{
-    color: #ff0000;
-    font-size: 24px;
-    font-family: 'Courier New', monospace;
-    font-weight: 900;
-    text-shadow: 0 0 8px #ff0000;
-    background: #220000;
-    padding: 2px 8px;
-    border-radius: 3px;
-    min-width: 30px;
-    display: inline-block;
-}}
-.controls {{
-    background: linear-gradient(180deg, #8b4513 0%, #654321 100%);
-    border-radius: 8px;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-    border: 2px solid #ffd700;
-    margin-bottom: 8px;
-}}
-.stop-buttons {{
-    display: flex;
-    gap: 15px;
-}}
-.stop-btn {{
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #ff6b6b 0%, #c00 60%, #600 100%);
-    border: 2px solid #333;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
-}}
-.lever {{
-    width: 40px;
-    height: 110px;
-    position: relative;
-}}
-.lever-stick {{
+/* CREDIT/COUNT/PAYOUT の数字 */
+.score-overlay {{
     position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform-origin: bottom center;
-    width: 8px;
-    height: 90px;
-    background: linear-gradient(90deg, #666 0%, #ddd 50%, #666 100%);
-    margin-left: -4px;
-    border-radius: 4px;
-    animation: leverDown 0.6s ease-in-out forwards;
-}}
-.lever-ball {{
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    margin-left: -16px;
-    width: 32px;
+    top: 358px;
+    left: 148px;
+    width: 212px;
     height: 32px;
-    background: radial-gradient(circle at 30% 30%, #ff8080 0%, #c00 70%, #600 100%);
-    border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.4);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2;
 }}
-@keyframes leverDown {{
-    0% {{ transform: rotate(0deg); }}
-    40% {{ transform: rotate(55deg); }}
-    100% {{ transform: rotate(0deg); }}
-}}
-.gold-logo {{
-    text-align: center;
-    background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
-    border: 3px solid #ffd700;
-    border-radius: 10px;
-    padding: 8px;
-    box-shadow: 0 0 20px #ffd700, inset 0 0 10px rgba(255,255,255,0.4);
-}}
-.gold-logo .text {{
-    color: #8b0000;
-    font-size: 20px;
+.score-num {{
+    color: #ff2222;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
     font-weight: 900;
-    letter-spacing: 3px;
-    text-shadow: 1px 1px 0 #fff;
-    font-style: italic;
-}}
-.jackpot {{
+    text-shadow: 0 0 6px #ff0000;
+    width: 42px;
     text-align: center;
-    margin-top: 10px;
+}}
+/* 当選確定テキスト */
+.jackpot {{
+    position: absolute;
+    bottom: -40px;
+    left: 0; right: 0;
+    text-align: center;
     font-size: 24px;
     color: #ffd700;
     font-weight: 900;
-    text-shadow: 2px 2px 0 #ff1493, 4px 4px 10px #000;
+    text-shadow: 2px 2px 0 #c71585, 4px 4px 10px #000;
     opacity: 0;
     letter-spacing: 2px;
+    z-index: 10;
 }}
 .jackpot.show {{
     opacity: 1;
@@ -437,58 +253,43 @@ body {{
     100% {{ transform: scale(1.2); color: #fff; }}
 }}
 @media (max-width: 600px) {{
-    .cabinet {{ max-width: 95%; }}
-    .reel {{ height: 150px; }}
-    .reel-item {{ height: 50px; font-size: 14px; }}
-    .center-line {{ top: 50px; height: 50px; }}
-    .flower {{ width: 32px; height: 32px; }}
-    .petal {{ width: 15px; height: 15px; }}
-    .flower-center {{ width: 8px; height: 8px; }}
-    .bonus-plate .text {{ font-size: 18px; }}
-    .gold-logo .text {{ font-size: 16px; }}
+    .cabinet-wrap {{
+        width: 320px;
+        height: 400px;
+    }}
+    .reels {{
+        top: 155px;
+        left: 99px;
+        width: 141px;
+        height: 72px;
+    }}
+    .reel-item {{ height: 24px; font-size: 10px; }}
+    .center-line {{ top: 24px; left: 99px; width: 141px; height: 24px; }}
+    .score-overlay {{
+        top: 239px;
+        left: 99px;
+        width: 141px;
+        height: 22px;
+    }}
+    .score-num {{ font-size: 11px; width: 28px; }}
     .jackpot {{ font-size: 18px; }}
-    .lever {{ width: 32px; height: 90px; }}
-    .lever-stick {{ height: 70px; }}
-    .lever-ball {{ width: 26px; height: 26px; margin-left: -13px; }}
-    .stop-btn {{ width: 28px; height: 28px; }}
-    .stop-buttons {{ gap: 10px; }}
 }}
 </style>
 </head>
 <body>
-<div class="cabinet">
-    <div class="top-vent"></div>
-    <div class="bonus-plate"><div class="text">BIG BONUS</div></div>
-    <div class="hibiscus-panel">
-        <div class="flower" id="f1"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="flower-center"></div></div>
-        <div class="flower" id="f2"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="flower-center"></div></div>
-        <div class="flower" id="f3"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="flower-center"></div></div>
-        <div class="flower" id="f4"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="flower-center"></div></div>
-        <div class="flower" id="f5"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="flower-center"></div></div>
+<div class="cabinet-wrap">
+    <div class="cabinet-bg" id="bg"></div>
+    <div class="reels">
+        <div class="reel"><div class="reel-inner" id="reel1"></div><div class="reel-glass"></div></div>
+        <div class="reel"><div class="reel-inner" id="reel2"></div><div class="reel-glass"></div></div>
+        <div class="reel"><div class="reel-inner" id="reel3"></div><div class="reel-glass"></div></div>
     </div>
-    <div class="reel-frame">
-        <div class="reels">
-            <div class="reel"><div class="reel-inner" id="reel1"></div><div class="reel-glass"></div></div>
-            <div class="reel"><div class="reel-inner" id="reel2"></div><div class="reel-glass"></div></div>
-            <div class="reel"><div class="reel-inner" id="reel3"></div><div class="reel-glass"></div></div>
-            <div class="center-line"></div>
-        </div>
+    <div class="center-line"></div>
+    <div class="score-overlay">
+        <div class="score-num" id="s1">00</div>
+        <div class="score-num" id="s2">00</div>
+        <div class="score-num" id="s3">00</div>
     </div>
-    <div class="roles"><span>🚹 男性</span><span>🚻 ゲスト</span><span>🚺 女子</span></div>
-    <div class="score-panel">
-        <div class="score-box"><div class="label">LEFT</div><div class="num" id="s1">0</div></div>
-        <div class="score-box"><div class="label">CENTER</div><div class="num" id="s2">0</div></div>
-        <div class="score-box"><div class="label">RIGHT</div><div class="num" id="s3">0</div></div>
-    </div>
-    <div class="controls">
-        <div class="stop-buttons">
-            <div class="stop-btn"></div>
-            <div class="stop-btn"></div>
-            <div class="stop-btn"></div>
-        </div>
-        <div class="lever"><div class="lever-stick"><div class="lever-ball"></div></div></div>
-    </div>
-    <div class="gold-logo"><div class="text">OKI-DOKI GOLD</div></div>
     <div class="jackpot" id="jackpot">✨ 当選確定！ ✨</div>
 </div>
 <script>
@@ -498,14 +299,11 @@ const menWin = {men_win_js};
 const guestWin = {guest_win_js};
 const womenWin = {women_win_js};
 
-const flowers = ['f1','f2','f3','f4','f5'].map(id => document.getElementById(id));
-flowers.forEach(f => f.classList.add('lit'));
-
 const isMobile = window.innerWidth <= 600;
-const itemHeight = isMobile ? 50 : 60;
+const itemHeight = isMobile ? 24 : 36;
 
 function buildReel(list, winner) {{
-    const loops = 25;
+    const loops = 30;
     let html = '';
     for (let i = 0; i < loops; i++) {{
         for (let name of list) {{
@@ -548,26 +346,27 @@ setTimeout(() => {{
     reel3.style.top = getStopPos(reel3) + 'px';
 }}, 500);
 
-// 数字パネルのランダム点滅→確定
 const s1 = document.getElementById('s1'), s2 = document.getElementById('s2'), s3 = document.getElementById('s3');
 const scoreTimer = setInterval(() => {{
-    s1.textContent = Math.floor(Math.random()*10);
-    s2.textContent = Math.floor(Math.random()*10);
-    s3.textContent = Math.floor(Math.random()*10);
+    s1.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    s2.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    s3.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
 }}, 80);
 
-setTimeout(() => {{ s1.textContent = Math.floor(Math.random()*10); }}, 500 + d1);
-setTimeout(() => {{ s2.textContent = Math.floor(Math.random()*10); }}, 500 + d2);
 setTimeout(() => {{
     clearInterval(scoreTimer);
-    s3.textContent = Math.floor(Math.random()*10);
+    s1.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    s2.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    s3.textContent = '77';
+    // ピカピカ版に切り替え＋当選確定表示
+    document.getElementById('bg').classList.add('peka');
     document.getElementById('jackpot').classList.add('show');
 }}, 500 + d3 + 300);
 </script>
 </body>
 </html>
 """
-    components.html(slot_html, height=720)
+    components.html(slot_html, height=680)
 
     col1, col2, col3 = st.columns(3)
     with col1:
