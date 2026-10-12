@@ -100,7 +100,6 @@ if st.session_state.show_gacha and st.session_state.results:
             others = [n for n in pool if n != winner]
             above = random.choice(others) if others else winner
             below = random.choice(others) if others else winner
-            # 上から下に流れる→先頭に[above, winner, below]を置く
             items = [above, winner, below] + items
         else:
             items = [pool[0], pool[0], pool[0]] + items
@@ -133,7 +132,7 @@ if st.session_state.show_gacha and st.session_state.results:
             </div>
         </div>
         
-        <div id="jackpot" style="position:absolute; top:540px; left:0; right:0; text-align:center; font-size:24px; font-weight:bold; z-index:5; opacity:0; animation:rainbow 1s linear infinite;">
+        <div id="jackpot" style="position:absolute; top:572px; left:0; right:0; text-align:center; font-size:22px; font-weight:bold; z-index:5; opacity:0; animation:rainbow 1s linear infinite;">
             🎉 当選確定！ 🎉
         </div>
     </div>
@@ -185,9 +184,7 @@ if st.session_state.show_gacha and st.session_state.results:
     
     function buildReel(elId, list) {{
         const el = document.getElementById(elId);
-        // 上から下に流れる演出のため、リストを逆順で配置
-        const reversed = [...list].reverse();
-        el.innerHTML = reversed.map(it => {{
+        el.innerHTML = list.map(it => {{
             if (it.url) {{
                 return `<div class="reel-item"><img src="${{it.url}}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=fallback>${{it.name}}</div>';"/></div>`;
             }} else {{
@@ -199,26 +196,20 @@ if st.session_state.show_gacha and st.session_state.results:
     function spin(innerId, windowId, list, delay) {{
         const inner = document.getElementById(innerId);
         const win = document.getElementById(windowId);
-        // 逆順配置なので、末尾3つが[below, winner, above]。中央(winner)を窓中央に合わせる
-        const totalItems = list.length;
-        // 逆順後のwinnerのindex = totalItems - 2
-        const targetIdx = totalItems - 2;
-        // 中央段に表示: top = -(targetIdx * ITEM_H - ITEM_H)
-        const stopPos = -(targetIdx * ITEM_H - ITEM_H);
-        // 開始位置: inner全体を上にずらしておき、下に流す
+        // 先頭に [above, winner, below] が配置されている
+        // 中央段(winner, index=1)を窓中央に表示: top = -(1*ITEM_H - ITEM_H) = 0
+        const stopPos = 0;
+        // 開始位置: 大きく下にずらしてから、上に戻すことで上→下に流れる見た目
+        const startPos = -(list.length - 10) * ITEM_H;
         inner.style.transition = 'none';
-        inner.style.top = stopPos + 'px';
-        // 一旦リセットしてから、上から下へ流す演出
+        inner.style.top = startPos + 'px';
         setTimeout(() => {{
-            inner.style.top = '-' + ((totalItems - 10) * ITEM_H) + 'px';
+            inner.style.transition = 'top 1.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            inner.style.top = stopPos + 'px';
             setTimeout(() => {{
-                inner.style.transition = 'top 2.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                inner.style.top = stopPos + 'px';
-                setTimeout(() => {{
-                    win.classList.add('win');
-                }}, 2500);
-            }}, 50);
-        }}, delay);
+                win.classList.add('win');
+            }}, 1500);
+        }}, delay + 50);
     }}
     
     buildReel('ri-men', menList);
@@ -227,13 +218,13 @@ if st.session_state.show_gacha and st.session_state.results:
     
     setTimeout(() => {{
         spin('ri-men', 'rw-men', menList, 0);
-        spin('ri-guest', 'rw-guest', guestList, 500);
-        spin('ri-women', 'rw-women', womenList, 1000);
+        spin('ri-guest', 'rw-guest', guestList, 300);
+        spin('ri-women', 'rw-women', womenList, 600);
         
         setTimeout(() => {{
             document.getElementById('cabinet').src = '{PEKA_IMG}';
             document.getElementById('jackpot').style.opacity = '1';
-        }}, 4000);
+        }}, 2800);
     }}, 500);
     </script>
     """
