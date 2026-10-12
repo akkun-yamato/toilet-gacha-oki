@@ -106,8 +106,20 @@ if st.session_state.show_slot and st.session_state.results:
     if not all_men: all_men = ["---"]
     if not all_women: all_women = ["---"]
 
-    men_list = json.dumps(all_men, ensure_ascii=False)
-    women_list = json.dumps(all_women, ensure_ascii=False)
+    # 当選者が必ずリストに含まれるようにする（安全策）
+    men_reel_list = list(all_men)
+    guest_reel_list = list(all_men)
+    women_reel_list = list(all_women)
+    if men_winner not in men_reel_list and men_winner != "該当者なし":
+        men_reel_list.append(men_winner)
+    if guest_winner not in guest_reel_list and guest_winner != "該当者なし":
+        guest_reel_list.append(guest_winner)
+    if women_winner not in women_reel_list and women_winner != "該当者なし":
+        women_reel_list.append(women_winner)
+
+    men_list = json.dumps(men_reel_list, ensure_ascii=False)
+    guest_list = json.dumps(guest_reel_list, ensure_ascii=False)
+    women_list = json.dumps(women_reel_list, ensure_ascii=False)
     men_win_js = json.dumps(men_winner, ensure_ascii=False)
     guest_win_js = json.dumps(guest_winner, ensure_ascii=False)
     women_win_js = json.dumps(women_winner, ensure_ascii=False)
@@ -133,6 +145,7 @@ body {{
     height: 600px;
     margin: 10px auto;
 }}
+/* normal画像は常に表示 */
 .cabinet-bg {{
     position: absolute;
     top: 0; left: 0;
@@ -141,17 +154,34 @@ body {{
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+    z-index: 1;
+}}
+/* peka画像は確定時だけ上から被せる */
+.cabinet-peka {{
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: url('{img_peka}');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    z-index: 2;
     transition: opacity 0.3s;
 }}
-.cabinet-bg.peka {{
-    background-image: url('{img_peka}');
-    animation: pekaFlash 0.4s infinite alternate;
+.cabinet-peka.show {{
+    opacity: 1;
+    animation: pekaFlash 0.3s infinite alternate, rainbowHue 2s linear infinite;
 }}
 @keyframes pekaFlash {{
-    0% {{ filter: brightness(1); }}
-    100% {{ filter: brightness(1.4) drop-shadow(0 0 20px #ffd700); }}
+    0% {{ filter: brightness(1) saturate(1); }}
+    100% {{ filter: brightness(1.5) saturate(1.5) drop-shadow(0 0 25px #ffd700); }}
 }}
-/* リール窓3つを画像の該当位置に重ねる */
+@keyframes rainbowHue {{
+    0% {{ filter: hue-rotate(0deg) brightness(1.3) saturate(1.5); }}
+    100% {{ filter: hue-rotate(360deg) brightness(1.3) saturate(1.5); }}
+}}
+/* リール窓 */
 .reels {{
     position: absolute;
     top: 232px;
@@ -160,12 +190,12 @@ body {{
     height: 108px;
     display: flex;
     gap: 2px;
-    z-index: 2;
+    z-index: 5;
 }}
 .reel {{
     flex: 1;
     overflow: hidden;
-    background: linear-gradient(180deg, #fafafa 0%, #e8e8e8 50%, #fafafa 100%);
+    background: linear-gradient(180deg, #fff8e1 0%, #fff 50%, #fff8e1 100%);
     position: relative;
     border-radius: 2px;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
@@ -181,20 +211,32 @@ body {{
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 900;
-    color: #333;
-    border-bottom: 1px dashed #bbb;
+    color: #4a0e4e;
+    border-bottom: 1px dashed #ccc;
+    background: linear-gradient(180deg, transparent 0%, rgba(255,215,0,0.08) 100%);
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
+    letter-spacing: 1px;
 }}
 .reel-item.winner {{
     color: #c71585;
     background: linear-gradient(90deg, #ffd700 0%, #fff 50%, #ffd700 100%);
-    text-shadow: 1px 1px 0 #fff;
+    text-shadow: 
+        1px 1px 0 #fff,
+        -1px -1px 0 #fff,
+        0 0 8px #ffd700;
+    font-weight: 900;
+    animation: winnerGlow 0.5s infinite alternate;
+}}
+@keyframes winnerGlow {{
+    0% {{ box-shadow: inset 0 0 10px rgba(255,215,0,0.5); }}
+    100% {{ box-shadow: inset 0 0 20px rgba(255,215,0,1), 0 0 15px #ffd700; }}
 }}
 .reel-glass {{
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
     pointer-events: none;
     z-index: 3;
 }}
@@ -204,12 +246,11 @@ body {{
     left: 148px;
     width: 212px;
     height: 36px;
-    border-top: 1px solid rgba(255,20,147,0.4);
-    border-bottom: 1px solid rgba(255,20,147,0.4);
+    border-top: 2px solid rgba(255,20,147,0.5);
+    border-bottom: 2px solid rgba(255,20,147,0.5);
     pointer-events: none;
-    z-index: 4;
+    z-index: 6;
 }}
-/* CREDIT/COUNT/PAYOUT の数字 */
 .score-overlay {{
     position: absolute;
     top: 358px;
@@ -219,7 +260,7 @@ body {{
     display: flex;
     justify-content: space-around;
     align-items: center;
-    z-index: 2;
+    z-index: 5;
 }}
 .score-num {{
     color: #ff2222;
@@ -230,27 +271,35 @@ body {{
     width: 42px;
     text-align: center;
 }}
-/* 当選確定テキスト */
 .jackpot {{
     position: absolute;
     bottom: -40px;
     left: 0; right: 0;
     text-align: center;
-    font-size: 24px;
+    font-size: 28px;
     color: #ffd700;
     font-weight: 900;
-    text-shadow: 2px 2px 0 #c71585, 4px 4px 10px #000;
+    text-shadow: 2px 2px 0 #c71585, 4px 4px 15px #ff1493;
     opacity: 0;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     z-index: 10;
 }}
 .jackpot.show {{
     opacity: 1;
-    animation: jackpotPulse 0.4s infinite alternate;
+    animation: jackpotPulse 0.4s infinite alternate, rainbowText 2s linear infinite;
 }}
 @keyframes jackpotPulse {{
-    0% {{ transform: scale(1); color: #ffd700; }}
-    100% {{ transform: scale(1.2); color: #fff; }}
+    0% {{ transform: scale(1); }}
+    100% {{ transform: scale(1.2); }}
+}}
+@keyframes rainbowText {{
+    0% {{ color: #ff0000; }}
+    16% {{ color: #ff8c00; }}
+    33% {{ color: #ffd700; }}
+    50% {{ color: #00ff00; }}
+    66% {{ color: #00bfff; }}
+    83% {{ color: #ff00ff; }}
+    100% {{ color: #ff0000; }}
 }}
 @media (max-width: 600px) {{
     .cabinet-wrap {{
@@ -263,7 +312,7 @@ body {{
         width: 141px;
         height: 72px;
     }}
-    .reel-item {{ height: 24px; font-size: 10px; }}
+    .reel-item {{ height: 24px; font-size: 11px; }}
     .center-line {{ top: 24px; left: 99px; width: 141px; height: 24px; }}
     .score-overlay {{
         top: 239px;
@@ -272,13 +321,14 @@ body {{
         height: 22px;
     }}
     .score-num {{ font-size: 11px; width: 28px; }}
-    .jackpot {{ font-size: 18px; }}
+    .jackpot {{ font-size: 20px; }}
 }}
 </style>
 </head>
 <body>
 <div class="cabinet-wrap">
-    <div class="cabinet-bg" id="bg"></div>
+    <div class="cabinet-bg"></div>
+    <div class="cabinet-peka" id="peka"></div>
     <div class="reels">
         <div class="reel"><div class="reel-inner" id="reel1"></div><div class="reel-glass"></div></div>
         <div class="reel"><div class="reel-inner" id="reel2"></div><div class="reel-glass"></div></div>
@@ -294,6 +344,7 @@ body {{
 </div>
 <script>
 const menList = {men_list};
+const guestList = {guest_list};
 const womenList = {women_list};
 const menWin = {men_win_js};
 const guestWin = {guest_win_js};
@@ -302,17 +353,23 @@ const womenWin = {women_win_js};
 const isMobile = window.innerWidth <= 600;
 const itemHeight = isMobile ? 24 : 36;
 
+// リール構築：ランダム順に大量に並べて、最後に「ダミー・当選者・ダミー」を配置
 function buildReel(list, winner) {{
     const loops = 30;
     let html = '';
     for (let i = 0; i < loops; i++) {{
-        for (let name of list) {{
+        // 毎ループ名前リストをシャッフルして変化を出す
+        const shuffled = [...list].sort(() => Math.random() - 0.5);
+        for (let name of shuffled) {{
             html += `<div class="reel-item">${{name}}</div>`;
         }}
     }}
-    html += `<div class="reel-item">${{list[0]}}</div>`;
+    // 最後の3つ：ダミー・当選者・ダミー
+    const dummy1 = list.find(n => n !== winner) || list[0];
+    const dummy2 = list.find(n => n !== winner && n !== dummy1) || list[0];
+    html += `<div class="reel-item">${{dummy1}}</div>`;
     html += `<div class="reel-item winner">${{winner}}</div>`;
-    html += `<div class="reel-item">${{list[0] || '---'}}</div>`;
+    html += `<div class="reel-item">${{dummy2}}</div>`;
     return html;
 }}
 
@@ -321,13 +378,16 @@ const reel2 = document.getElementById('reel2');
 const reel3 = document.getElementById('reel3');
 
 reel1.innerHTML = buildReel(menList, menWin);
-reel2.innerHTML = buildReel(menList, guestWin);
+reel2.innerHTML = buildReel(guestList, guestWin);
 reel3.innerHTML = buildReel(womenList, womenWin);
 
+// 当選者（winner要素）が中央窓にピタッと止まるように計算
+// 中央窓は上から itemHeight 分（1個目の下）
 function getStopPos(reel) {{
-    const items = reel.querySelectorAll('.reel-item');
     const winnerItem = reel.querySelector('.reel-item.winner');
-    const idx = Array.from(items).indexOf(winnerItem);
+    const idx = Array.from(reel.querySelectorAll('.reel-item')).indexOf(winnerItem);
+    // reel-innerのtopを -(idx * itemHeight - itemHeight) にすると、
+    // 当選者が中央（上から1個目の位置）に来る
     return -(idx * itemHeight - itemHeight);
 }}
 
@@ -355,11 +415,11 @@ const scoreTimer = setInterval(() => {{
 
 setTimeout(() => {{
     clearInterval(scoreTimer);
-    s1.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
-    s2.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    s1.textContent = '77';
+    s2.textContent = '77';
     s3.textContent = '77';
-    // ピカピカ版に切り替え＋当選確定表示
-    document.getElementById('bg').classList.add('peka');
+    // peka画像を被せる＋ジャックポット表示
+    document.getElementById('peka').classList.add('show');
     document.getElementById('jackpot').classList.add('show');
 }}, 500 + d3 + 300);
 </script>
